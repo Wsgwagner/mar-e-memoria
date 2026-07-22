@@ -1,0 +1,2077 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mar &amp; Memória — jogos acessíveis por coordenadas</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0C1B2A">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --mar:#0C1B2A; --painel:#12283F; --creme:#F2EBDC; --amarelo:#FFC53D;
+    --vermelho:#FF6B6B; --agua:#7FC4EA; --verde:#5FD9A4; --borda:#31567F;
+    --cel:clamp(28px, 7.2vw, 46px); --cab:clamp(20px, 4vw, 28px);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    font-family:'Archivo', system-ui, sans-serif;
+    background:radial-gradient(1200px 600px at 50% -10%, #16324F 0%, #0C1B2A 60%) var(--mar);
+    color:var(--creme); min-height:100vh; padding-bottom:96px;
+  }
+  h1,h2,h3,.display{font-family:'Archivo Black','Archivo',sans-serif}
+  header{display:flex; align-items:center; gap:14px; padding:14px 18px;
+    border-bottom:2px solid var(--borda); flex-wrap:wrap}
+  header h1{font-size:1.05rem; margin:0; text-transform:uppercase; letter-spacing:3px}
+  .bandeiras{display:flex; gap:6px}
+  .bandeira{width:22px; height:16px; border-radius:2px; border:1px solid #08131F}
+  .bandeira.b1{background:linear-gradient(135deg, var(--amarelo) 50%, #C1272D 50%)}
+  .bandeira.b2{background:linear-gradient(90deg, #1B4B8F 33%, #fff 33%, #fff 66%, #1B4B8F 66%)}
+  .bandeira.b3{background:radial-gradient(circle at 50% 50%, #C1272D 34%, var(--amarelo) 36%)}
+  main{max-width:1000px; margin:0 auto; padding:18px}
+  button{font:inherit; cursor:pointer}
+  .botao{background:var(--amarelo); color:#1B1B1B; border:0; border-radius:10px;
+    padding:12px 18px; font-weight:700; font-size:1rem}
+  .botao--fantasma{background:transparent; color:var(--creme); border:2px solid var(--borda)}
+  .botao:disabled{opacity:.45; cursor:not-allowed}
+  .botao:focus-visible,.celula:focus-visible,a:focus-visible,input:focus-visible{
+    outline:3px solid var(--amarelo); outline-offset:2px}
+  .linha-botoes{display:flex; gap:10px; flex-wrap:wrap; margin-top:12px}
+  .menu-jogos{display:grid; gap:16px; grid-template-columns:repeat(auto-fit,minmax(270px,1fr))}
+  .cartao{background:var(--painel); border:2px solid var(--borda); border-radius:14px; padding:18px}
+  .cartao h2{margin:0 0 8px; font-size:1.3rem}
+  .cartao p{margin:0; line-height:1.5}
+  .status{background:var(--painel); border:2px solid var(--borda); border-radius:10px;
+    padding:10px 14px; margin:12px 0; font-weight:600}
+  .grade{display:grid; gap:4px; justify-content:start; margin:12px 0}
+  .cab{display:flex; align-items:center; justify-content:center;
+    font-weight:700; color:var(--amarelo); font-size:.85rem}
+  .celula{width:var(--cel); height:var(--cel); border:1px solid var(--borda);
+    background:#0F2338; color:var(--creme); border-radius:6px; padding:0;
+    font-size:calc(var(--cel)*.46); display:flex; align-items:center; justify-content:center;
+    transition:background .15s}
+  .celula.previa{background:var(--verde); color:#08131F}
+  .celula.previa-ruim{background:var(--vermelho); color:#08131F}
+
+  /* ---------- Imagens da Batalha Naval (SVG embutido) ---------- */
+  .celula.navio{
+    background-color:#6CC5D4; background-position:center;
+    background-repeat:no-repeat; background-size:100% 100%;
+  }
+  /* Navio desenhado inteiro no estilo flat Military Boats */
+  .celula.navio-h-proa{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40' preserveAspectRatio='none'%3E%3Cdefs%3E%3CclipPath id='p'%3E%3Cpath d='M40 14 L15 14 C6.5 15 2 19.5 1.8 24.5 L3.5 30 L40 30 Z'/%3E%3C/clipPath%3E%3C/defs%3E%3Cpath d='M40 14 L15 14 C6.5 15 2 19.5 1.8 24.5 L3.5 30 L40 30 Z' fill='%2393A5BA'/%3E%3Cg clip-path='url(%23p)'%3E%3Crect x='0' y='14' width='40' height='4' fill='%23B9C7D8'/%3E%3Crect x='0' y='22' width='40' height='3' fill='%237E92A9'/%3E%3Crect x='0' y='24.5' width='40' height='.9' fill='%23EDF3F8'/%3E%3Crect x='0' y='25.4' width='40' height='4.6' fill='%23E23B33'/%3E%3Crect x='0' y='28.7' width='40' height='1.3' fill='%23B7271F'/%3E%3Ccircle cx='17' cy='20.6' r='1.05' fill='%23F2F6FA'/%3E%3Ccircle cx='24.5' cy='20.6' r='1.05' fill='%23F2F6FA'/%3E%3Ccircle cx='32' cy='20.6' r='1.05' fill='%23F2F6FA'/%3E%3C/g%3E%3Crect x='15' y='12.4' width='25' height='1.8' fill='%23A9B8C9'/%3E%3Cpath d='M14.5 15.6 L5.5 20.5' stroke='%23B9C7D8' stroke-width='1.5' stroke-linecap='round'/%3E%3Cpath d='M9.5 18.6 l1.6 2.6 l-3 .2 Z' fill='%2345566B'/%3E%3Cpath d='M1 35 q2.2 -1.9 4.4 0' stroke='%23EAF7F9' stroke-width='1.3' fill='none' stroke-linecap='round' opacity='.9'/%3E%3Cpath d='M29 9 q2.2 -1.9 4.4 0' stroke='%23EAF7F9' stroke-width='1.3' fill='none' stroke-linecap='round' opacity='.9'/%3E%3C/svg%3E")}
+  .celula.navio-v-proa{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40' preserveAspectRatio='none'%3E%3Cg transform='rotate(90 20 20)'%3E%3Cdefs%3E%3CclipPath id='p'%3E%3Cpath d='M40 14 L15 14 C6.5 15 2 19.5 1.8 24.5 L3.5 30 L40 30 Z'/%3E%3C/clipPath%3E%3C/defs%3E%3Cpath d='M40 14 L15 14 C6.5 15 2 19.5 1.8 24.5 L3.5 30 L40 30 Z' fill='%2393A5BA'/%3E%3Cg clip-path='url(%23p)'%3E%3Crect x='0' y='14' width='40' height='4' fill='%23B9C7D8'/%3E%3Crect x='0' y='22' width='40' height='3' fill='%237E92A9'/%3E%3Crect x='0' y='24.5' width='40' height='.9' fill='%23EDF3F8'/%3E%3Crect x='0' y='25.4' width='40' height='4.6' fill='%23E23B33'/%3E%3Crect x='0' y='28.7' width='40' height='1.3' fill='%23B7271F'/%3E%3Ccircle cx='17' cy='20.6' r='1.05' fill='%23F2F6FA'/%3E%3Ccircle cx='24.5' cy='20.6' r='1.05' fill='%23F2F6FA'/%3E%3Ccircle cx='32' cy='20.6' r='1.05' fill='%23F2F6FA'/%3E%3C/g%3E%3Crect x='15' y='12.4' width='25' height='1.8' fill='%23A9B8C9'/%3E%3Cpath d='M14.5 15.6 L5.5 20.5' stroke='%23B9C7D8' stroke-width='1.5' stroke-linecap='round'/%3E%3Cpath d='M9.5 18.6 l1.6 2.6 l-3 .2 Z' fill='%2345566B'/%3E%3Cpath d='M1 35 q2.2 -1.9 4.4 0' stroke='%23EAF7F9' stroke-width='1.3' fill='none' stroke-linecap='round' opacity='.9'/%3E%3Cpath d='M29 9 q2.2 -1.9 4.4 0' stroke='%23EAF7F9' stroke-width='1.3' fill='none' stroke-linecap='round' opacity='.9'/%3E%3C/g%3E%3C/svg%3E")}
+  .celula.navio-h-meio1{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40' preserveAspectRatio='none'%3E%3Cdefs%3E%3CclipPath id='p'%3E%3Cpath d='M0 14 H40 V30 H0 Z'/%3E%3C/clipPath%3E%3C/defs%3E%3Cpath d='M0 14 H40 V30 H0 Z' fill='%2393A5BA'/%3E%3Cg clip-path='url(%23p)'%3E%3Crect x='0' y='14' width='40' height='4' fill='%23B9C7D8'/%3E%3Crect x='0' y='22' width='40' height='3' fill='%237E92A9'/%3E%3Crect x='0' y='24.5' width='40' height='.9' fill='%23EDF3F8'/%3E%3Crect x='0' y='25.4' width='40' height='4.6' fill='%23E23B33'/%3E%3Crect x='0' y='28.7' width='40' height='1.3' fill='%23B7271F'/%3E%3Ccircle cx='6' cy='20.6' r='1.05' fill='%23F2F6FA'/%3E%3Ccircle cx='13.5' cy='20.6' r='1.05' fill='%23F2F6FA'/%3E%3Ccircle cx='21' cy='20.6' r='1.05' fill='%23F2F6FA'/%3E%3C/g%3E%3Crect x='0' y='12.4' width='40' height='1.8' fill='%23A9B8C9'/%3E%3Crect x='2' y='8.2' width='12.5' height='1.6' rx='.8' fill='%2345566B'/%3E%3Crect x='2' y='10.6' width='12.5' height='1.6' rx='.8' fill='%2345566B'/%3E%3Crect x='13.5' y='7.4' width='14' height='5' rx='1' fill='%23A9B8C9'/%3E%3Crect x='16.5' y='4.8' width='8' height='2.8' rx='1' fill='%23C6D2DF'/%3E%3Crect x='29.5' y='15.6' width='7.5' height='3.1' rx='1.55' fill='%23F2F6FA'/%3E%3Crect x='29.5' y='16.8' width='7.5' height='.8' fill='%2345566B' opacity='.55'/%3E%3Cpath d='M32 35.5 q2.2 -1.9 4.4 0' stroke='%23EAF7F9' stroke-width='1.3' fill='none' stroke-linecap='round' opacity='.9'/%3E%3C/svg%3E")}
+  .celula.navio-v-meio1{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40' preserveAspectRatio='none'%3E%3Cg transform='rotate(90 20 20)'%3E%3Cdefs%3E%3CclipPath id='p'%3E%3Cpath d='M0 14 H40 V30 H0 Z'/%3E%3C/clipPath%3E%3C/defs%3E%3Cpath d='M0 14 H40 V30 H0 Z' fill='%2393A5BA'/%3E%3Cg clip-path='url(%23p)'%3E%3Crect x='0' y='14' width='40' height='4' fill='%23B9C7D8'/%3E%3Crect x='0' y='22' width='40' height='3' fill='%237E92A9'/%3E%3Crect x='0' y='24.5' width='40' height='.9' fill='%23EDF3F8'/%3E%3Crect x='0' y='25.4' width='40' height='4.6' fill='%23E23B33'/%3E%3Crect x='0' y='28.7' width='40' height='1.3' fill='%23B7271F'/%3E%3Ccircle cx='6' cy='20.6' r='1.05' fill='%23F2F6FA'/%3E%3Ccircle cx='13.5' cy='20.6' r='1.05' fill='%23F2F6FA'/%3E%3Ccircle cx='21' cy='20.6' r='1.05' fill='%23F2F6FA'/%3E%3C/g%3E%3Crect x='0' y='12.4' width='40' height='1.8' fill='%23A9B8C9'/%3E%3Crect x='2' y='8.2' width='12.5' height='1.6' rx='.8' fill='%2345566B'/%3E%3Crect x='2' y='10.6' width='12.5' height='1.6' rx='.8' fill='%2345566B'/%3E%3Crect x='13.5' y='7.4' width='14' height='5' rx='1' fill='%23A9B8C9'/%3E%3Crect x='16.5' y='4.8' width='8' height='2.8' rx='1' fill='%23C6D2DF'/%3E%3Crect x='29.5' y='15.6' width='7.5' height='3.1' rx='1.55' fill='%23F2F6FA'/%3E%3Crect x='29.5' y='16.8' width='7.5' height='.8' fill='%2345566B' opacity='.55'/%3E%3Cpath d='M32 35.5 q2.2 -1.9 4.4 0' stroke='%23EAF7F9' stroke-width='1.3' fill='none' stroke-linecap='round' opacity='.9'/%3E%3C/g%3E%3C/svg%3E")}
+  .celula.navio-h-meio2{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40' preserveAspectRatio='none'%3E%3Cdefs%3E%3CclipPath id='p'%3E%3Cpath d='M0 14 H40 V30 H0 Z'/%3E%3C/clipPath%3E%3C/defs%3E%3Cpath d='M0 14 H40 V30 H0 Z' fill='%2393A5BA'/%3E%3Cg clip-path='url(%23p)'%3E%3Crect x='0' y='14' width='40' height='4' fill='%23B9C7D8'/%3E%3Crect x='0' y='22' width='40' height='3' fill='%237E92A9'/%3E%3Crect x='0' y='24.5' width='40' height='.9' fill='%23EDF3F8'/%3E%3Crect x='0' y='25.4' width='40' height='4.6' fill='%23E23B33'/%3E%3Crect x='0' y='28.7' width='40' height='1.3' fill='%23B7271F'/%3E%3Ccircle cx='4.5' cy='20.6' r='1.05' fill='%23F2F6FA'/%3E%3Ccircle cx='33' cy='20.6' r='1.05' fill='%23F2F6FA'/%3E%3Ccircle cx='38' cy='20.6' r='1.05' fill='%23F2F6FA'/%3E%3C/g%3E%3Crect x='0' y='12.4' width='40' height='1.8' fill='%23A9B8C9'/%3E%3Crect x='6' y='5.6' width='23' height='8.4' fill='%23C6D2DF'/%3E%3Crect x='8' y='7.6' width='19' height='2.6' fill='%2345566B'/%3E%3Crect x='9.5' y='2.2' width='12' height='3.4' fill='%23A9B8C9'/%3E%3Crect x='26.8' y='0' width='1.2' height='14' fill='%2345566B'/%3E%3Ccircle cx='27.4' cy='2.6' r='2' fill='none' stroke='%2345566B' stroke-width='1'/%3E%3Crect x='23.6' y='4.9' width='8' height='.9' fill='%2345566B'/%3E%3Cpath d='M1.5 35.5 q2.2 -1.9 4.4 0' stroke='%23EAF7F9' stroke-width='1.3' fill='none' stroke-linecap='round' opacity='.9'/%3E%3C/svg%3E")}
+  .celula.navio-v-meio2{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40' preserveAspectRatio='none'%3E%3Cg transform='rotate(90 20 20)'%3E%3Cdefs%3E%3CclipPath id='p'%3E%3Cpath d='M0 14 H40 V30 H0 Z'/%3E%3C/clipPath%3E%3C/defs%3E%3Cpath d='M0 14 H40 V30 H0 Z' fill='%2393A5BA'/%3E%3Cg clip-path='url(%23p)'%3E%3Crect x='0' y='14' width='40' height='4' fill='%23B9C7D8'/%3E%3Crect x='0' y='22' width='40' height='3' fill='%237E92A9'/%3E%3Crect x='0' y='24.5' width='40' height='.9' fill='%23EDF3F8'/%3E%3Crect x='0' y='25.4' width='40' height='4.6' fill='%23E23B33'/%3E%3Crect x='0' y='28.7' width='40' height='1.3' fill='%23B7271F'/%3E%3Ccircle cx='4.5' cy='20.6' r='1.05' fill='%23F2F6FA'/%3E%3Ccircle cx='33' cy='20.6' r='1.05' fill='%23F2F6FA'/%3E%3Ccircle cx='38' cy='20.6' r='1.05' fill='%23F2F6FA'/%3E%3C/g%3E%3Crect x='0' y='12.4' width='40' height='1.8' fill='%23A9B8C9'/%3E%3Crect x='6' y='5.6' width='23' height='8.4' fill='%23C6D2DF'/%3E%3Crect x='8' y='7.6' width='19' height='2.6' fill='%2345566B'/%3E%3Crect x='9.5' y='2.2' width='12' height='3.4' fill='%23A9B8C9'/%3E%3Crect x='26.8' y='0' width='1.2' height='14' fill='%2345566B'/%3E%3Ccircle cx='27.4' cy='2.6' r='2' fill='none' stroke='%2345566B' stroke-width='1'/%3E%3Crect x='23.6' y='4.9' width='8' height='.9' fill='%2345566B'/%3E%3Cpath d='M1.5 35.5 q2.2 -1.9 4.4 0' stroke='%23EAF7F9' stroke-width='1.3' fill='none' stroke-linecap='round' opacity='.9'/%3E%3C/g%3E%3C/svg%3E")}
+  .celula.navio-h-popa{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40' preserveAspectRatio='none'%3E%3Cdefs%3E%3CclipPath id='p'%3E%3Cpath d='M0 14 L27 14 C33.5 15 36.8 19.5 36.8 24.5 L35.2 30 L0 30 Z'/%3E%3C/clipPath%3E%3C/defs%3E%3Cpath d='M0 14 L27 14 C33.5 15 36.8 19.5 36.8 24.5 L35.2 30 L0 30 Z' fill='%2393A5BA'/%3E%3Cg clip-path='url(%23p)'%3E%3Crect x='0' y='14' width='40' height='4' fill='%23B9C7D8'/%3E%3Crect x='0' y='22' width='40' height='3' fill='%237E92A9'/%3E%3Crect x='0' y='24.5' width='40' height='.9' fill='%23EDF3F8'/%3E%3Crect x='0' y='25.4' width='40' height='4.6' fill='%23E23B33'/%3E%3Crect x='0' y='28.7' width='40' height='1.3' fill='%23B7271F'/%3E%3Ccircle cx='6' cy='20.6' r='1.05' fill='%23F2F6FA'/%3E%3Ccircle cx='13.5' cy='20.6' r='1.05' fill='%23F2F6FA'/%3E%3Ccircle cx='21' cy='20.6' r='1.05' fill='%23F2F6FA'/%3E%3C/g%3E%3Crect x='0' y='12.4' width='27.5' height='1.8' fill='%23A9B8C9'/%3E%3Crect x='4' y='8.6' width='12' height='5.6' fill='%23A9B8C9'/%3E%3Crect x='6.5' y='6' width='7' height='2.6' fill='%23C6D2DF'/%3E%3Crect x='28' y='3' width='1.2' height='11' fill='%2345566B'/%3E%3Cpath d='M29.2 3.4 L36 5.3 L29.2 7.2 Z' fill='%23E23B33'/%3E%3Crect x='29' y='28' width='5' height='2' rx='1' fill='%23B7271F'/%3E%3Cpath d='M34 34 q2.2 -1.9 4.4 0' stroke='%23EAF7F9' stroke-width='1.3' fill='none' stroke-linecap='round' opacity='.9'/%3E%3C/svg%3E")}
+  .celula.navio-v-popa{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40' preserveAspectRatio='none'%3E%3Cg transform='rotate(90 20 20)'%3E%3Cdefs%3E%3CclipPath id='p'%3E%3Cpath d='M0 14 L27 14 C33.5 15 36.8 19.5 36.8 24.5 L35.2 30 L0 30 Z'/%3E%3C/clipPath%3E%3C/defs%3E%3Cpath d='M0 14 L27 14 C33.5 15 36.8 19.5 36.8 24.5 L35.2 30 L0 30 Z' fill='%2393A5BA'/%3E%3Cg clip-path='url(%23p)'%3E%3Crect x='0' y='14' width='40' height='4' fill='%23B9C7D8'/%3E%3Crect x='0' y='22' width='40' height='3' fill='%237E92A9'/%3E%3Crect x='0' y='24.5' width='40' height='.9' fill='%23EDF3F8'/%3E%3Crect x='0' y='25.4' width='40' height='4.6' fill='%23E23B33'/%3E%3Crect x='0' y='28.7' width='40' height='1.3' fill='%23B7271F'/%3E%3Ccircle cx='6' cy='20.6' r='1.05' fill='%23F2F6FA'/%3E%3Ccircle cx='13.5' cy='20.6' r='1.05' fill='%23F2F6FA'/%3E%3Ccircle cx='21' cy='20.6' r='1.05' fill='%23F2F6FA'/%3E%3C/g%3E%3Crect x='0' y='12.4' width='27.5' height='1.8' fill='%23A9B8C9'/%3E%3Crect x='4' y='8.6' width='12' height='5.6' fill='%23A9B8C9'/%3E%3Crect x='6.5' y='6' width='7' height='2.6' fill='%23C6D2DF'/%3E%3Crect x='28' y='3' width='1.2' height='11' fill='%2345566B'/%3E%3Cpath d='M29.2 3.4 L36 5.3 L29.2 7.2 Z' fill='%23E23B33'/%3E%3Crect x='29' y='28' width='5' height='2' rx='1' fill='%23B7271F'/%3E%3Cpath d='M34 34 q2.2 -1.9 4.4 0' stroke='%23EAF7F9' stroke-width='1.3' fill='none' stroke-linecap='round' opacity='.9'/%3E%3C/g%3E%3C/svg%3E")}
+  .celula.agua{
+    color:transparent;
+    background:#0E2A44
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cpath d='M3 26q5-6 10 0t10 0 10 0 4 0' fill='none' stroke='%237FC4EA' stroke-width='3' stroke-linecap='round'/%3E%3Cpath d='M7 33q4-5 8 0t8 0 8 0' fill='none' stroke='%234A90C4' stroke-width='2.5' stroke-linecap='round'/%3E%3Ccircle cx='20' cy='13' r='2.6' fill='%237FC4EA'/%3E%3Ccircle cx='26' cy='8' r='1.7' fill='%237FC4EA' opacity='.75'/%3E%3Ccircle cx='14' cy='9' r='1.3' fill='%237FC4EA' opacity='.55'/%3E%3C/svg%3E")
+      center/80% no-repeat;
+  }
+  .celula.acerto{
+    color:transparent;
+    background:#7E2430
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cpath d='M20 2l4.2 9.4L34 7l-5.4 9.4L38 20l-9.4 3.6L34 33l-9.8-4.4L20 38l-4.2-9.4L6 33l5.4-9.4L2 20l9.4-3.6L6 7l9.8 4.4z' fill='%23FFC53D'/%3E%3Ccircle cx='20' cy='20' r='7.5' fill='%23FF6B6B'/%3E%3Ccircle cx='20' cy='20' r='3.4' fill='%23FFE9A8'/%3E%3C/svg%3E")
+      center/86% no-repeat;
+  }
+  .celula.afundado{
+    color:transparent;
+    background:#2A0B10
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cg transform='rotate(14 20 20)'%3E%3Crect x='7' y='14' width='26' height='12' rx='6' fill='%236B7B8D'/%3E%3Ccircle cx='20' cy='20' r='2.8' fill='%23372028'/%3E%3C/g%3E%3Cpath d='M2 32q5-5 10 0t10 0 10 0 6 0' fill='none' stroke='%234A90C4' stroke-width='3.2' stroke-linecap='round'/%3E%3Cpath d='M24 8q2-4 5-4M27 12q2-3 4-3' stroke='%23FF6B6B' stroke-width='2.4' fill='none' stroke-linecap='round'/%3E%3C/svg%3E")
+      center/88% no-repeat;
+  }
+  @keyframes boom{0%{transform:scale(.35)} 55%{transform:scale(1.18)} 100%{transform:scale(1)}}
+  .celula.anim{animation:boom .4s ease-out}
+  @keyframes naufragio{0%{transform:rotate(0deg) translateY(0); filter:brightness(1)}
+    45%{transform:rotate(7deg) translateY(2px)}
+    100%{transform:rotate(13deg) translateY(5px); filter:brightness(.5)}}
+  .celula.afundado.anim{animation:naufragio .9s ease-in forwards}
+  .frota-faixa{display:flex; gap:12px; align-items:center; flex-wrap:wrap;
+    margin:8px 0 2px; font-size:.82rem}
+  .frota-faixa strong{color:var(--amarelo); margin-right:2px}
+  .frota-navio{display:inline-flex; gap:2px}
+  .fq{width:11px; height:11px; border-radius:2px; background:#5FD9A4; display:inline-block}
+  .fq.x{background:#FF6B6B}
+  .frota-navio.afundado .fq{background:#7E2430; opacity:.75}
+
+  .grade--mem{--cel:clamp(34px, 10.4vw, 72px)}
+  .celula.carta{background:#274B72; font-size:calc(var(--cel)*.55)}
+  .celula.carta.par{background:#173B2C; border-color:var(--verde)}
+  .mini{--cel:22px; --cab:16px; gap:2px}
+  .mini .celula{border-radius:3px; font-size:12px}
+  .mini .cab{font-size:.65rem}
+  .tabuleiros{display:flex; gap:28px; flex-wrap:wrap; align-items:flex-start}
+  .tela-passar{display:flex; flex-direction:column; align-items:center; justify-content:center;
+    min-height:55vh; text-align:center; gap:18px}
+  .tela-passar h2{font-size:1.8rem; margin:0}
+  .codigo-sala{font-family:'Archivo Black'; font-size:clamp(2.6rem, 12vw, 4.4rem);
+    letter-spacing:.35em; color:var(--amarelo); background:#08131F;
+    border:2px dashed var(--amarelo); border-radius:14px; padding:14px 10px 14px 24px;
+    text-align:center; margin:10px 0}
+  input.campo{font:inherit; font-weight:700; font-size:1.5rem; letter-spacing:.3em;
+    text-transform:uppercase; text-align:center; background:#08131F; color:var(--creme);
+    border:2px solid var(--borda); border-radius:10px; padding:10px; width:9ch; margin-top:8px}
+  input.campo--nome{text-transform:none; letter-spacing:normal; width:min(100%,18ch); font-size:1.15rem}
+  .farol{position:fixed; left:0; right:0; bottom:0; background:#071120;
+    border-top:3px solid var(--amarelo); color:var(--amarelo); min-height:64px;
+    display:flex; align-items:center; gap:12px; padding:10px 16px;
+    font-family:'Archivo Black'; text-transform:uppercase; letter-spacing:1.5px;
+    font-size:clamp(.78rem, 2.4vw, 1rem)}
+  .farol::before{content:'📢'; flex:none}
+  .sr-only{position:absolute; width:1px; height:1px; margin:-1px; overflow:hidden;
+    clip:rect(0 0 0 0); white-space:nowrap}
+  dialog{background:var(--painel); color:var(--creme); border:2px solid var(--amarelo);
+    border-radius:14px; max-width:560px; width:92vw; padding:22px}
+  dialog::backdrop{background:rgba(4,10,18,.75)}
+  dialog h2{margin-top:0}
+  dialog li{margin:6px 0; line-height:1.45}
+  kbd{background:#08131F; border:1px solid var(--borda); border-radius:5px;
+    padding:1px 7px; font-family:inherit; font-weight:700; color:var(--amarelo)}
+  @media (prefers-reduced-motion: reduce){
+    *{transition:none !important; animation:none !important}
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="bandeiras" aria-hidden="true">
+    <span class="bandeira b1"></span><span class="bandeira b2"></span><span class="bandeira b3"></span>
+  </div>
+  <h1>Mar &amp; Memória</h1>
+</header>
+
+<main id="app"></main>
+
+<div class="farol" id="farol" aria-hidden="true">Bem-vindo a bordo!</div>
+<div class="sr-only" aria-live="assertive" id="live"></div>
+
+<dialog id="ajuda">
+  <h2>Como jogar pelo teclado</h2>
+  <ul>
+    <li><kbd>Tab</kbd> passa pelos botões da tela.</li>
+    <li><kbd>Setas</kbd> andam pelo tabuleiro — cada casa é falada (ex.: "B 5").</li>
+    <li><kbd>Enter</kbd> ou <kbd>Espaço</kbd> ativa a casa (atirar / virar carta / posicionar navio).</li>
+    <li><kbd>R</kbd> gira o navio na fase de posicionamento.</li>
+    <li><kbd>A</kbd> posiciona os navios restantes ao acaso.</li>
+    <li><kbd>Backspace</kbd> desfaz o último navio posicionado.</li>
+    <li>No Jogo da Memória, cada bicho tem a sua própria nota musical — dá para jogar de ouvido, junto com as coordenadas!</li>
+    <li>No celular, o aparelho vibra nos acertos e explosões (dá para desligar no menu).</li>
+    <li>No modo online, cada jogada tem 1 minuto; se cair a conexão, o jogo espera até 45 segundos você voltar; e no fim dá para pedir revanche.</li>
+    <li><kbd>S</kbd> fala o placar / a situação das frotas.</li>
+    <li><kbd>C</kbd> repete a coordenada atual.</li>
+    <li><kbd>Esc</kbd> fecha esta ajuda.</li>
+  </ul>
+  <p>No modo online as teclas são as mesmas: cada jogador joga no próprio aparelho e as jogadas são anunciadas em voz alta nos dois.</p>
+  <p>Tudo que é falado também aparece no painel amarelo no rodapé e é enviado ao leitor de telas.</p>
+  <div class="linha-botoes"><button class="botao" id="fechar-ajuda">Fechar</button></div>
+</dialog>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+(function(){
+'use strict';
+
+/* =====================================================
+   BASE: fala, região aria-live e utilitários
+===================================================== */
+var LETRAS = 'ABCDEFGHIJ';
+var app   = document.getElementById('app');
+var farol = document.getElementById('farol');
+var live  = document.getElementById('live');
+
+var config = { voz:true, velocidade:1, som:true, vibra:true };
+
+var vozPT = null;
+function escolherVoz(){
+  if (!('speechSynthesis' in window)) return;
+  var vozes = speechSynthesis.getVoices();
+  vozPT = vozes.find(function(v){ return /pt[-_]BR/i.test(v.lang); })
+       || vozes.find(function(v){ return /^pt/i.test(v.lang); }) || null;
+}
+if ('speechSynthesis' in window){
+  escolherVoz();
+  speechSynthesis.onvoiceschanged = escolherVoz;
+}
+
+/* Fala o texto em voz alta, mostra no painel do rodapé e
+   envia para a região aria-live (leitores de tela).
+   opcoes.juntar = true  -> não interrompe a fala anterior */
+function falar(texto, opcoes){
+  opcoes = opcoes || {};
+  farol.textContent = texto;
+  live.textContent = '';
+  window.setTimeout(function(){ live.textContent = texto; }, 40);
+  if (!config.voz || !('speechSynthesis' in window)) return;
+  if (!opcoes.juntar) speechSynthesis.cancel();
+  var u = new SpeechSynthesisUtterance(texto);
+  u.lang = 'pt-BR';
+  if (vozPT) u.voice = vozPT;
+  u.rate = config.velocidade;
+  speechSynthesis.speak(u);
+}
+
+function coordNome(r,c){ return LETRAS[r] + (c+1); }
+function coordFala(r,c){ return LETRAS[r] + ' ' + (c+1); }
+function sortear(lista){ return lista[Math.floor(Math.random()*lista.length)]; }
+
+/* =====================================================
+   SONS (Web Audio API — sem arquivos de áudio)
+   agua      -> respingo quando o torpedo cai na água
+   acerto    -> explosão quando atinge um navio
+   afundou   -> super explosão quando o navio inteiro afunda
+   par       -> sininho quando encontra um par na memória
+   vitoria   -> fanfarra de fim de jogo
+===================================================== */
+var audioCtx = null;
+function ctxAudio(){
+  var AC = window.AudioContext || window.webkitAudioContext;
+  if (!AC) return null;
+  if (!audioCtx) audioCtx = new AC();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+function ruidoBuffer(ctx, dur){
+  var n = Math.max(1, Math.floor(ctx.sampleRate * dur));
+  var buf = ctx.createBuffer(1, n, ctx.sampleRate);
+  var d = buf.getChannelData(0);
+  for (var i=0; i<n; i++) d[i] = Math.random()*2 - 1;
+  return buf;
+}
+function somAgua(ctx){
+  var t = ctx.currentTime;
+  /* respingo: ruído filtrado descendo de tom */
+  var src = ctx.createBufferSource(); src.buffer = ruidoBuffer(ctx, .6);
+  var f = ctx.createBiquadFilter(); f.type = 'lowpass';
+  f.frequency.setValueAtTime(950, t);
+  f.frequency.exponentialRampToValueAtTime(240, t + .5);
+  var g = ctx.createGain();
+  g.gain.setValueAtTime(.0001, t);
+  g.gain.exponentialRampToValueAtTime(.5, t + .04);
+  g.gain.exponentialRampToValueAtTime(.0001, t + .58);
+  src.connect(f); f.connect(g); g.connect(ctx.destination);
+  src.start(t);
+  /* "plóft" grave da queda */
+  var o = ctx.createOscillator(); o.type = 'sine';
+  o.frequency.setValueAtTime(300, t);
+  o.frequency.exponentialRampToValueAtTime(85, t + .18);
+  var g2 = ctx.createGain();
+  g2.gain.setValueAtTime(.35, t);
+  g2.gain.exponentialRampToValueAtTime(.0001, t + .22);
+  o.connect(g2); g2.connect(ctx.destination);
+  o.start(t); o.stop(t + .25);
+}
+function somExplosao(ctx, forte){
+  var t = ctx.currentTime;
+  var dur = forte ? 1.7 : .65;
+  function estouro(inicio, volume, freqIni){
+    var src = ctx.createBufferSource(); src.buffer = ruidoBuffer(ctx, dur);
+    var f = ctx.createBiquadFilter(); f.type = 'lowpass';
+    f.frequency.setValueAtTime(freqIni, inicio);
+    f.frequency.exponentialRampToValueAtTime(60, inicio + dur);
+    var g = ctx.createGain();
+    g.gain.setValueAtTime(.0001, inicio);
+    g.gain.exponentialRampToValueAtTime(volume, inicio + .02);
+    g.gain.exponentialRampToValueAtTime(.0001, inicio + dur);
+    src.connect(f); f.connect(g); g.connect(ctx.destination);
+    src.start(inicio);
+  }
+  estouro(t, forte ? .9 : .55, forte ? 1500 : 1000);
+  if (forte) estouro(t + .28, .7, 900); /* segunda onda da super explosão */
+  /* impacto grave */
+  var o = ctx.createOscillator(); o.type = 'sine';
+  o.frequency.setValueAtTime(forte ? 110 : 95, t);
+  o.frequency.exponentialRampToValueAtTime(forte ? 26 : 34, t + (forte ? .9 : .45));
+  var g2 = ctx.createGain();
+  g2.gain.setValueAtTime(forte ? .85 : .6, t);
+  g2.gain.exponentialRampToValueAtTime(.0001, t + (forte ? 1.1 : .5));
+  o.connect(g2); g2.connect(ctx.destination);
+  o.start(t); o.stop(t + (forte ? 1.2 : .55));
+}
+function somNotas(ctx, notas, tipoOnda, volume){
+  var t = ctx.currentTime;
+  notas.forEach(function(freq, i){
+    var o = ctx.createOscillator(); o.type = tipoOnda;
+    o.frequency.value = freq;
+    var g = ctx.createGain();
+    var ini = t + i * .16;
+    g.gain.setValueAtTime(.0001, ini);
+    g.gain.exponentialRampToValueAtTime(volume, ini + .02);
+    g.gain.exponentialRampToValueAtTime(.0001, ini + .32);
+    o.connect(g); g.connect(ctx.destination);
+    o.start(ini); o.stop(ini + .35);
+  });
+}
+var VIBRACOES = { agua:[30], acerto:[70,40,70], afundou:[90,50,90,50,220],
+                  par:[50,40,50], vitoria:[80,60,80,60,200] };
+function vibrar(tipo){
+  try {
+    if (config.vibra && navigator.vibrate && VIBRACOES[tipo]) navigator.vibrate(VIBRACOES[tipo]);
+  } catch (e) { /* vibração nunca deve travar o jogo */ }
+}
+/* Cada bicho do jogo da memória tem a sua nota (escala de dó maior, 2 oitavas) */
+var NOTAS_CARTAS = [262, 294, 330, 349, 392, 440, 494, 523,
+                    587, 659, 698, 784, 880, 988, 1047, 1175];
+function tocarNota(nomeCarta){
+  if (!config.som) return;
+  var ctx = ctxAudio(); if (!ctx) return;
+  for (var i = 0; i < CARTAS_BASE.length; i++){
+    if (CARTAS_BASE[i].nome === nomeCarta){
+      try { somNotas(ctx, [NOTAS_CARTAS[i % NOTAS_CARTAS.length]], 'triangle', .34); } catch (e) {}
+      return;
+    }
+  }
+}
+function tocarSom(tipo){
+  vibrar(tipo);
+  if (!config.som) return;
+  var ctx = ctxAudio();
+  if (!ctx) return;
+  try {
+    if (tipo === 'agua')    somAgua(ctx);
+    if (tipo === 'acerto')  somExplosao(ctx, false);
+    if (tipo === 'afundou') somExplosao(ctx, true);
+    if (tipo === 'par')     somNotas(ctx, [660, 880], 'sine', .3);
+    if (tipo === 'vitoria') somNotas(ctx, [523, 659, 784, 1046], 'triangle', .35);
+  } catch (e) { /* som nunca deve travar o jogo */ }
+}
+function animarNaufragio(grade, celulas){
+  (celulas || []).forEach(function(p, i){
+    window.setTimeout(function(){ grade.animar(p[0], p[1]); }, i * 130);
+  });
+}
+function faixaFrota(titulo, estados){
+  var html = '<strong>' + titulo + '</strong>';
+  estados.forEach(function(nav){
+    var cls = nav.acertos >= nav.tam ? ' afundado' : '';
+    var q = '';
+    for (var i = 0; i < nav.tam; i++) q += '<i class="fq' + (i < nav.acertos ? ' x' : '') + '"></i>';
+    html += '<span class="frota-navio' + cls + '">' + q + '</span>';
+  });
+  var d = document.createElement('div');
+  d.className = 'frota-faixa';
+  d.setAttribute('aria-hidden', 'true');
+  d.innerHTML = html;
+  return d;
+}
+function somDoResultado(tipo){
+  tocarSom(tipo === 'afundou' ? 'afundou' : (tipo === 'acerto' ? 'acerto' : 'agua'));
+}
+
+/* =====================================================
+   GERENCIADOR DE TELAS
+   Cada tela é um objeto { el, teclado(e), aoEntrar(), rede{} }
+===================================================== */
+var telaAtual = null;
+function mostrarTela(tela){
+  telaAtual = tela;
+  app.innerHTML = '';
+  app.appendChild(tela.el);
+  if (tela.aoEntrar) tela.aoEntrar();
+}
+document.addEventListener('keydown', function(e){
+  var ajuda = document.getElementById('ajuda');
+  if (ajuda.open) return; /* dentro da ajuda, só Esc/Tab */
+  if (telaAtual && telaAtual.teclado) telaAtual.teclado(e);
+});
+
+/* Ajuda */
+var dlgAjuda = document.getElementById('ajuda');
+document.getElementById('fechar-ajuda').addEventListener('click', function(){ dlgAjuda.close(); });
+function abrirAjuda(){
+  dlgAjuda.showModal();
+  falar('Ajuda aberta. Use as setas para andar pelo tabuleiro, Enter para ativar a casa, ' +
+        'R gira o navio, A posiciona ao acaso, S fala o placar, C repete a coordenada. ' +
+        'Pressione Escape para fechar.');
+}
+
+/* =====================================================
+   GRADE ACESSÍVEL REUTILIZÁVEL
+===================================================== */
+function criarGrade(opcoes){
+  var g = { linhas:opcoes.linhas, colunas:opcoes.colunas,
+            cursor:{r:0,c:0}, botoes:[], opcoes:opcoes };
+  var el = document.createElement('div');
+  el.className = 'grade' + (opcoes.classe ? ' ' + opcoes.classe : '');
+  el.style.gridTemplateColumns = 'var(--cab) repeat(' + opcoes.colunas + ', var(--cel))';
+  el.setAttribute('role','grid');
+  el.setAttribute('aria-label', opcoes.rotulo || 'Tabuleiro');
+  g.el = el;
+
+  var canto = document.createElement('div');
+  canto.className = 'cab'; canto.setAttribute('aria-hidden','true');
+  el.appendChild(canto);
+  for (var c0=0; c0<opcoes.colunas; c0++){
+    var hc = document.createElement('div');
+    hc.className='cab'; hc.textContent = c0+1; hc.setAttribute('aria-hidden','true');
+    el.appendChild(hc);
+  }
+  for (var r=0; r<opcoes.linhas; r++){
+    var hl = document.createElement('div');
+    hl.className='cab'; hl.textContent = LETRAS[r]; hl.setAttribute('aria-hidden','true');
+    el.appendChild(hl);
+    g.botoes[r] = [];
+    for (var c=0; c<opcoes.colunas; c++){
+      (function(r,c){
+        var b = document.createElement('button');
+        b.type='button'; b.className='celula'; b.tabIndex=-1;
+        b.addEventListener('focus', function(){
+          g.cursor = {r:r,c:c};
+          g.atualizar();
+          if (opcoes.aoFocar) opcoes.aoFocar(r,c);
+        });
+        b.addEventListener('click', function(){
+          if (opcoes.aoAtivar) opcoes.aoAtivar(r,c);
+        });
+        el.appendChild(b);
+        g.botoes[r][c] = b;
+      })(r,c);
+    }
+  }
+
+  g.atualizar = function(){
+    for (var r=0; r<g.linhas; r++)
+      for (var c=0; c<g.colunas; c++){
+        var b = g.botoes[r][c];
+        b.className = 'celula ' + (opcoes.classeCelula ? opcoes.classeCelula(r,c) : '');
+        b.textContent = opcoes.conteudoCelula ? opcoes.conteudoCelula(r,c) : '';
+        b.setAttribute('aria-label',
+          opcoes.rotuloCelula ? opcoes.rotuloCelula(r,c) : coordNome(r,c));
+        b.tabIndex = (r===g.cursor.r && c===g.cursor.c) ? 0 : -1;
+      }
+  };
+
+  g.focar = function(r,c){
+    g.cursor = {r:r,c:c};
+    g.atualizar();
+    g.botoes[r][c].focus();
+  };
+
+  /* toca a animação de explosão/respingo numa casa */
+  g.animar = function(r,c){
+    var b = g.botoes[r][c];
+    b.classList.remove('anim');
+    void b.offsetWidth; /* reinicia a animação */
+    b.classList.add('anim');
+  };
+
+  /* devolve true se a tecla foi usada pela grade */
+  g.teclado = function(e){
+    var r = g.cursor.r, c = g.cursor.c, usado = true;
+    switch (e.key){
+      case 'ArrowUp':    r = Math.max(0, r-1); break;
+      case 'ArrowDown':  r = Math.min(g.linhas-1, r+1); break;
+      case 'ArrowLeft':  c = Math.max(0, c-1); break;
+      case 'ArrowRight': c = Math.min(g.colunas-1, c+1); break;
+      case 'c': case 'C':
+        e.preventDefault();
+        if (g.opcoes.aoFocar) g.opcoes.aoFocar(r,c);
+        return true;
+      default: usado = false;
+    }
+    if (usado){ e.preventDefault(); g.focar(r,c); }
+    return usado;
+  };
+  return g;
+}
+
+/* =====================================================
+   REDE (modo online via Socket.IO)
+===================================================== */
+var net = { socket:null, papel:null, codigo:null, jogo:null, meuNome:null, nomes:null,
+            token:null, reconectando:false };
+
+function temServidor(){ return typeof io !== 'undefined'; }
+
+function conectar(depois){
+  if (!temServidor()){
+    falar('O modo online só funciona quando o jogo está aberto pelo endereço do servidor, ' +
+          'por exemplo o site hospedado. Abrindo o arquivo direto, use os modos locais.');
+    return;
+  }
+  if (net.socket && net.socket.connected){ depois(); return; }
+  if (!net.socket){
+    net.socket = io();
+    registrarRede(net.socket);
+  }
+  net.socket.once('connect', depois);
+}
+
+function registrarRede(s){
+  s.on('sala:pronta', function(d){
+    net.papel = d.papel; net.jogo = d.jogo; net.codigo = d.codigo;
+    net.nomes = d.nomes || null;
+    net.token = d.token || null;
+    falar(nomeAdversario() + ' entrou na sala! Começando ' +
+          (d.jogo === 'bn' ? 'a Batalha Naval' : 'o Jogo da Memória') + ' online.');
+    if (d.jogo === 'bn') iniciarBatalhaOnline();
+    else iniciarMemoriaOnline();
+  });
+  s.on('oponente:saiu', function(){
+    falar(nomeAdversario() + ' saiu da partida. Voltando ao menu principal.');
+    mostrarTela(telaMenu());
+  });
+  s.on('sala:erro', function(d){ falar(d && d.msg ? d.msg : 'Erro na sala.'); });
+  s.on('disconnect', function(){
+    if (net.codigo && net.token){
+      net.reconectando = true;
+      falar('A conexão com o servidor caiu. Tentando reconectar, aguarde.');
+    } else if (net.codigo){
+      falar('A conexão com o servidor caiu. Voltando ao menu principal.');
+      net.codigo = null;
+      mostrarTela(telaMenu());
+    }
+  });
+  s.on('connect', function(){
+    if (!net.reconectando || !net.codigo || !net.token) return;
+    s.emit('sala:retomar', { codigo: net.codigo, token: net.token }, function(resp){
+      net.reconectando = false;
+      if (resp && resp.ok){
+        falar('Conexão recuperada! A partida continua.');
+      } else {
+        falar('Não foi possível voltar à partida. Voltando ao menu principal.');
+        net.codigo = null; net.token = null;
+        mostrarTela(telaMenu());
+      }
+    });
+  });
+  s.on('oponente:caiu', function(d){
+    falar(nomeAdversario() + ' perdeu a conexão. Aguardando a volta por até ' +
+          ((d && d.segundos) || 45) + ' segundos.');
+  });
+  s.on('oponente:voltou', function(){
+    falar(nomeAdversario() + ' voltou! A partida continua.');
+  });
+  s.on('sala:revanche:pedida', function(){
+    falar(nomeAdversario() + ' quer revanche! Pressione o botão Revanche para aceitar.');
+  });
+  s.on('sala:reiniciar', function(d){
+    falar('Revanche! Preparando a nova partida.');
+    if (d.jogo === 'bn') iniciarBatalhaOnline();
+    else iniciarMemoriaOnline();
+  });
+  ['bn:comecar','bn:resultado','mem:comecar','mem:carta','mem:resultado',
+   'vez:aviso','vez:passou'].forEach(function(ev){
+    s.on(ev, function(d){
+      if (telaAtual && telaAtual.rede && telaAtual.rede[ev]) telaAtual.rede[ev](d);
+    });
+  });
+}
+
+function nomeAdversario(){
+  return (net.nomes && net.nomes[1 - net.papel]) ? net.nomes[1 - net.papel] : 'Adversário';
+}
+function nomeOnline(quem){ return quem === net.papel ? 'Você' : nomeAdversario(); }
+
+/* Tela para criar sala ou entrar com código */
+function telaOnline(tipoJogo){
+  var nomeJogo = tipoJogo === 'bn' ? 'Batalha Naval' : 'Jogo da Memória';
+  var el = document.createElement('div');
+  el.innerHTML =
+    '<h2 class="display">🌐 ' + nomeJogo + ' online</h2>' +
+    '<section class="cartao" style="margin:0 0 16px">' +
+      '<h2>Seu nome</h2>' +
+      '<p><label for="campo-nome">Como você quer ser chamado na partida? O nome vale só para esta partida e não fica salvo em lugar nenhum.</label></p>' +
+      '<input class="campo campo--nome" id="campo-nome" maxlength="20" autocomplete="off" spellcheck="false">' +
+    '</section>' +
+    '<div class="menu-jogos">' +
+      '<section class="cartao">' +
+        '<h2>Criar sala</h2>' +
+        '<p>Crie uma sala e diga o código de 4 letras para o outro jogador entrar do aparelho dele.</p>' +
+        '<div class="linha-botoes"><button class="botao" id="bt-criar">Criar sala</button></div>' +
+      '</section>' +
+      '<section class="cartao">' +
+        '<h2>Entrar numa sala</h2>' +
+        '<p><label for="campo-codigo">Digite o código que o outro jogador recebeu:</label></p>' +
+        '<input class="campo" id="campo-codigo" maxlength="4" autocomplete="off" ' +
+          'autocapitalize="characters" spellcheck="false" aria-label="Código da sala, 4 letras">' +
+        '<div class="linha-botoes">' +
+          '<button class="botao" id="bt-entrar">Entrar</button>' +
+        '</div>' +
+      '</section>' +
+    '</div>' +
+    '<div class="linha-botoes"><button class="botao botao--fantasma" id="bt-voltar">Voltar ao menu</button></div>';
+
+  var btCriar = el.querySelector('#bt-criar');
+  var btEntrar = el.querySelector('#bt-entrar');
+  var campo = el.querySelector('#campo-codigo');
+  var campoNome = el.querySelector('#campo-nome');
+  if (net.meuNome) campoNome.value = net.meuNome;
+  function pegarNome(){
+    var v = campoNome.value.trim();
+    if (!v){
+      falar('Antes de jogar, digite o seu nome no campo Seu nome. ' +
+            'Ele vale só para esta partida e não fica salvo.');
+      campoNome.focus();
+      return null;
+    }
+    net.meuNome = v;
+    return v;
+  }
+
+  btCriar.addEventListener('click', function(){
+    var nome = pegarNome();
+    if (!nome) return;
+    btCriar.disabled = true;
+    conectar(function(){
+      net.socket.emit('sala:criar', { jogo:tipoJogo, nome:nome }, function(resp){
+        if (!resp || !resp.codigo){
+          btCriar.disabled = false;
+          falar('Não foi possível criar a sala. Tente de novo.');
+          return;
+        }
+        mostrarTela(telaEsperandoSala(resp.codigo, nomeJogo));
+      });
+    });
+  });
+
+  function entrar(){
+    var nome = pegarNome();
+    if (!nome) return;
+    var codigo = campo.value.trim().toUpperCase();
+    if (codigo.length !== 4){
+      falar('O código da sala tem 4 letras. Digite o código e pressione Enter.');
+      campo.focus();
+      return;
+    }
+    btEntrar.disabled = true;
+    conectar(function(){
+      net.socket.emit('sala:entrar', { codigo:codigo, nome:nome }, function(resp){
+        if (resp && resp.erro){
+          btEntrar.disabled = false;
+          falar(resp.erro);
+          campo.focus();
+        }
+        /* se deu certo, o evento sala:pronta leva para o jogo */
+      });
+    });
+  }
+  btEntrar.addEventListener('click', entrar);
+  campo.addEventListener('keydown', function(e){
+    if (e.key === 'Enter'){ e.preventDefault(); entrar(); }
+  });
+
+  el.querySelector('#bt-voltar').addEventListener('click', function(){ mostrarTela(telaMenu()); });
+
+  return {
+    el: el,
+    aoEntrar: function(){
+      (campoNome.value.trim() ? btCriar : campoNome).focus();
+      falar(nomeJogo + ' online. Primeiro digite o seu nome, que vale só para esta partida. ' +
+            'Depois crie uma sala e compartilhe o código, ' +
+            'ou digite o código de uma sala existente para entrar.');
+    }
+  };
+}
+
+function telaEsperandoSala(codigo, nomeJogo){
+  var el = document.createElement('div');
+  el.className = 'tela-passar';
+  el.innerHTML =
+    '<h2 class="display">Sala criada!</h2>' +
+    '<p style="font-size:1.15rem; max-width:38ch">Diga este código para o outro jogador entrar. ' +
+    'A partida de ' + nomeJogo + ' começa assim que ele entrar.</p>' +
+    '<div class="codigo-sala" aria-hidden="true">' + codigo + '</div>' +
+    '<button class="botao botao--fantasma" id="bt-repetir">🔊 Repetir o código</button>' +
+    '<button class="botao botao--fantasma" id="bt-cancelar">Cancelar e voltar ao menu</button>';
+
+  function falarCodigo(){
+    falar('O código da sala é: ' + codigo.split('').join(', ') + '. Aguardando o adversário entrar.');
+  }
+  el.querySelector('#bt-repetir').addEventListener('click', falarCodigo);
+  el.querySelector('#bt-cancelar').addEventListener('click', function(){
+    if (net.socket) net.socket.disconnect();
+    net.socket = null; net.codigo = null; net.token = null; net.reconectando = false;
+    mostrarTela(telaMenu());
+  });
+
+  return {
+    el: el,
+    aoEntrar: function(){
+      el.querySelector('#bt-repetir').focus();
+      falarCodigo();
+    }
+  };
+}
+
+/* Tela genérica de escolha com botões grandes e fala */
+function telaEscolha(titulo, fala, opcoes){
+  var el = document.createElement('div');
+  el.className = 'tela-passar';
+  var botoes = opcoes.map(function(o, i){
+    return '<button class="botao' + (i ? ' botao--fantasma' : '') + '" data-i="' + i + '">' +
+           o.rotulo + '</button>';
+  }).join('');
+  el.innerHTML = '<h2 class="display">' + titulo + '</h2>' +
+    '<div class="linha-botoes" style="justify-content:center">' + botoes + '</div>' +
+    '<button class="botao botao--fantasma" id="bt-voltar-esc">Voltar ao menu</button>';
+  el.addEventListener('click', function(ev){
+    var b = ev.target.closest('button');
+    if (!b) return;
+    if (b.id === 'bt-voltar-esc'){ mostrarTela(telaMenu()); return; }
+    var o = opcoes[parseInt(b.getAttribute('data-i'), 10)];
+    if (o) o.acao();
+  });
+  return {
+    el: el,
+    aoEntrar: function(){ el.querySelector('button').focus(); falar(fala); }
+  };
+}
+function telaDificuldade(){
+  return telaEscolha('⚓ Batalha Naval contra o computador',
+    'Escolha a dificuldade do computador: fácil, médio ou difícil.',
+    [
+      { rotulo:'Fácil — atira ao acaso', acao:function(){ iniciarBatalha('pc', 'facil'); } },
+      { rotulo:'Médio — caça os navios', acao:function(){ iniciarBatalha('pc', 'medio'); } },
+      { rotulo:'Difícil — estrategista', acao:function(){ iniciarBatalha('pc', 'dificil'); } }
+    ]);
+}
+function telaTamanhoMemoria(modo){
+  return telaEscolha('🃏 Jogo da Memória',
+    'Escolha o tamanho da partida: rápida, com 8 pares, ou completa, com 16 pares.',
+    [
+      { rotulo:'Rápida — 8 pares (4 por 4)', acao:function(){ iniciarMemoria(modo, 8); } },
+      { rotulo:'Completa — 16 pares (4 por 8)', acao:function(){ iniciarMemoria(modo, 16); } }
+    ]);
+}
+
+/* =====================================================
+   MENU PRINCIPAL
+===================================================== */
+var jaDeuBoasVindas = false;
+function telaMenu(){
+  var el = document.createElement('div');
+  el.innerHTML =
+    '<h2 class="display">Escolha seu jogo</h2>' +
+    '<div class="menu-jogos">' +
+      '<section class="cartao">' +
+        '<h2>⚓ Batalha Naval</h2>' +
+        '<p>Posicione sua frota no tabuleiro de A1 a J10 e afunde os navios do adversário chamando coordenadas. Com sons de água e explosão!</p>' +
+        '<div class="linha-botoes">' +
+          '<button class="botao" data-acao="bn-pc">Contra o computador</button>' +
+          '<button class="botao botao--fantasma" data-acao="bn-2p">2 jogadores</button>' +
+          '<button class="botao botao--fantasma" data-acao="bn-online">🌐 Online</button>' +
+        '</div>' +
+      '</section>' +
+      '<section class="cartao">' +
+        '<h2>🃏 Jogo da Memória</h2>' +
+        '<p>32 cartas embaralhadas ao acaso — 16 pares, de A1 a D8. Encontre os pares: cada carta é anunciada em voz alta.</p>' +
+        '<div class="linha-botoes">' +
+          '<button class="botao" data-acao="mem-pc">Contra o computador</button>' +
+          '<button class="botao botao--fantasma" data-acao="mem-2p">2 jogadores</button>' +
+          '<button class="botao botao--fantasma" data-acao="mem-online">🌐 Online</button>' +
+        '</div>' +
+      '</section>' +
+    '</div>' +
+    '<section class="cartao" style="margin-top:16px">' +
+      '<h2>♿ Acessibilidade</h2>' +
+      '<p>Use as setas para andar pelo tabuleiro: cada casa é falada em voz alta e enviada ao leitor de telas. Enter ativa a casa.</p>' +
+      '<div class="linha-botoes">' +
+        '<button class="botao botao--fantasma" data-acao="voz">🔊 Voz: ativada</button>' +
+        '<button class="botao botao--fantasma" data-acao="vel">Velocidade da voz: normal</button>' +
+        '<button class="botao botao--fantasma" data-acao="som">💥 Sons: ativados</button>' +
+        '<button class="botao botao--fantasma" data-acao="vibra">📳 Vibração: ativada</button>' +
+        '<button class="botao botao--fantasma" data-acao="ajuda">❓ Ajuda</button>' +
+      '</div>' +
+    '</section>';
+
+  el.addEventListener('click', function(ev){
+    var b = ev.target.closest('button'); if (!b) return;
+    var acao = b.dataset.acao;
+    if (acao === 'bn-pc')      mostrarTela(telaDificuldade());
+    if (acao === 'bn-2p')      iniciarBatalha('2p');
+    if (acao === 'bn-online')  mostrarTela(telaOnline('bn'));
+    if (acao === 'mem-pc')     mostrarTela(telaTamanhoMemoria('pc'));
+    if (acao === 'mem-2p')     mostrarTela(telaTamanhoMemoria('2p'));
+    if (acao === 'mem-online') mostrarTela(telaOnline('mem'));
+    if (acao === 'ajuda')      abrirAjuda();
+    if (acao === 'voz'){
+      config.voz = !config.voz;
+      b.textContent = config.voz ? '🔊 Voz: ativada' : '🔇 Voz: desativada';
+      if (config.voz) falar('Voz ativada.');
+    }
+    if (acao === 'vel'){
+      config.velocidade = config.velocidade === 1 ? 1.3 : (config.velocidade === 1.3 ? 0.8 : 1);
+      var nome = config.velocidade === 1 ? 'normal' : (config.velocidade === 1.3 ? 'rápida' : 'lenta');
+      b.textContent = 'Velocidade da voz: ' + nome;
+      falar('Velocidade ' + nome + '.');
+    }
+    if (acao === 'som'){
+      config.som = !config.som;
+      b.textContent = config.som ? '💥 Sons: ativados' : '🔕 Sons: desativados';
+      falar(config.som ? 'Sons de jogo ativados.' : 'Sons de jogo desativados.');
+      if (config.som) tocarSom('acerto');
+    }
+    if (acao === 'vibra'){
+      config.vibra = !config.vibra;
+      b.textContent = config.vibra ? '📳 Vibração: ativada' : '📴 Vibração: desativada';
+      falar(config.vibra ? 'Vibração ativada.' : 'Vibração desativada.');
+      if (config.vibra) vibrar('acerto');
+    }
+  });
+
+  return {
+    el: el,
+    aoEntrar: function(){
+      var primeiro = el.querySelector('button');
+      if (primeiro) primeiro.focus();
+      if (!jaDeuBoasVindas){
+        jaDeuBoasVindas = true;
+        falar('Bem-vindo a bordo do Mar e Memória. Use Tab para navegar entre os botões ' +
+              'e Enter para escolher. Temos Batalha Naval e Jogo da Memória, ' +
+              'contra o computador, em dois jogadores no mesmo aparelho, ou online em aparelhos diferentes.');
+      } else {
+        falar('Menu principal.');
+      }
+    }
+  };
+}
+
+/* Tela de "passe o aparelho" (modo 2 jogadores local) */
+function telaPassar(mensagem, aoContinuar){
+  var el = document.createElement('div');
+  el.className = 'tela-passar';
+  el.innerHTML =
+    '<h2 class="display">🔄 Troca de turno</h2>' +
+    '<p style="font-size:1.15rem; max-width:34ch">' + mensagem + '</p>' +
+    '<button class="botao" id="bt-continuar">Estou pronto — continuar</button>';
+  el.querySelector('#bt-continuar').addEventListener('click', aoContinuar);
+  return {
+    el: el,
+    aoEntrar: function(){
+      el.querySelector('#bt-continuar').focus();
+      falar(mensagem + ' Pressione Enter quando estiver pronto.');
+    }
+  };
+}
+
+/* =====================================================
+   BATALHA NAVAL
+===================================================== */
+var N = 10;
+var NAVIOS_DEF = [
+  { nome:'Porta-aviões', tam:5 },
+  { nome:'Encouraçado',  tam:4 },
+  { nome:'Cruzador',     tam:3 },
+  { nome:'Submarino',    tam:3 },
+  { nome:'Destroyer',    tam:2 }
+];
+function tamPorNome(nome){
+  for (var i = 0; i < NAVIOS_DEF.length; i++)
+    if (NAVIOS_DEF[i].nome === nome) return NAVIOS_DEF[i].tam;
+  return 0;
+}
+
+/* Descobre qual pedaço do navio está nesta casa (proa, meio ou popa),
+   para desenhar o barco inteiro em vez de um bloco repetido. */
+function segmentoNavio(tab, r, c){
+  var idx = tab.grade[r][c];
+  if (idx === -1) return '';
+  var cels = tab.navios[idx].celulas;
+  if (!cels || !cels.length) return 'navio navio-h-meio1';
+  var pos = -1;
+  for (var i=0; i<cels.length; i++){
+    if (cels[i][0] === r && cels[i][1] === c){ pos = i; break; }
+  }
+  var horizontal = cels.length < 2 || cels[0][0] === cels[1][0];
+  var eixo = horizontal ? 'h' : 'v';
+  var parte = (pos === 0) ? 'proa'
+    : (pos === cels.length - 1 ? 'popa'
+    : (pos % 2 === 1 ? 'meio1' : 'meio2'));
+  return 'navio navio-' + eixo + '-' + parte;
+}
+
+function novoTabuleiro(){
+  var t = {
+    grade:[], /* índice do navio em cada casa, ou -1 */
+    tiros:[], /* tiros recebidos: null | 'agua' | 'acerto' */
+    navios: NAVIOS_DEF.map(function(d){
+      return { nome:d.nome, tam:d.tam, celulas:[], acertos:0 };
+    })
+  };
+  for (var r=0; r<N; r++){
+    t.grade[r]=[]; t.tiros[r]=[];
+    for (var c=0; c<N; c++){ t.grade[r][c]=-1; t.tiros[r][c]=null; }
+  }
+  return t;
+}
+
+function podeColocar(tab, idx, r, c, horizontal){
+  var tam = tab.navios[idx].tam;
+  for (var i=0; i<tam; i++){
+    var rr = r + (horizontal?0:i), cc = c + (horizontal?i:0);
+    if (rr>=N || cc>=N) return false;
+    if (tab.grade[rr][cc] !== -1) return false;
+  }
+  return true;
+}
+function colocarNavio(tab, idx, r, c, horizontal){
+  var nav = tab.navios[idx]; nav.celulas = [];
+  for (var i=0; i<nav.tam; i++){
+    var rr = r + (horizontal?0:i), cc = c + (horizontal?i:0);
+    tab.grade[rr][cc] = idx;
+    nav.celulas.push([rr,cc]);
+  }
+}
+function removerNavio(tab, idx){
+  tab.navios[idx].celulas.forEach(function(p){ tab.grade[p[0]][p[1]] = -1; });
+  tab.navios[idx].celulas = [];
+}
+function posicionarAleatorio(tab, aPartirDe){
+  for (var i = (aPartirDe||0); i < tab.navios.length; i++){
+    var ok = false, tent = 0;
+    while (!ok && tent < 800){
+      var h = Math.random() < 0.5;
+      var r = Math.floor(Math.random()*N), c = Math.floor(Math.random()*N);
+      if (podeColocar(tab, i, r, c, h)){ colocarNavio(tab, i, r, c, h); ok = true; }
+      tent++;
+    }
+  }
+}
+/* Executa um tiro. Devolve null se a casa já foi atacada. */
+function atirar(tab, r, c){
+  if (tab.tiros[r][c]) return null;
+  var idx = tab.grade[r][c];
+  if (idx === -1){ tab.tiros[r][c] = 'agua'; return { tipo:'agua' }; }
+  tab.tiros[r][c] = 'acerto';
+  var nav = tab.navios[idx];
+  nav.acertos++;
+  if (nav.acertos === nav.tam) return { tipo:'afundou', navio:nav.nome, celulas:nav.celulas };
+  return { tipo:'acerto', navio:nav.nome };
+}
+function frotaDestruida(tab){
+  return tab.navios.every(function(n){ return n.acertos === n.tam; });
+}
+function naviosAfundados(tab){
+  return tab.navios.filter(function(n){ return n.acertos === n.tam; }).length;
+}
+
+/* ---------- IA do computador (caça e perseguição) ---------- */
+function novaCpu(nivel){ return { nivel: nivel || 'medio', fila:[], acertos:[] }; }
+function cpuEscolherTiro(cpu, tab){
+  var alvo = null, r, c;
+  /* fácil: nunca caça, só sorteia */
+  if (cpu.nivel !== 'facil'){
+    while (cpu.fila.length){
+      var t = cpu.fila.shift();
+      if (!tab.tiros[t[0]][t[1]]){ alvo = t; break; }
+    }
+  }
+  if (!alvo){
+    var livres = [];
+    /* difícil: varre em padrão xadrez, que encontra navios mais rápido */
+    if (cpu.nivel === 'dificil'){
+      for (r=0; r<N; r++) for (c=0; c<N; c++)
+        if (!tab.tiros[r][c] && (r+c)%2===0) livres.push([r,c]);
+    }
+    if (!livres.length)
+      for (r=0; r<N; r++) for (c=0; c<N; c++)
+        if (!tab.tiros[r][c]) livres.push([r,c]);
+    alvo = sortear(livres);
+  }
+  return alvo;
+}
+function cpuRegistrar(cpu, tab, r, c, resultado){
+  if (cpu.nivel === 'facil') return; /* fácil não aprende com os acertos */
+  if (resultado.tipo === 'afundou'){ cpu.acertos=[]; cpu.fila=[]; return; }
+  if (resultado.tipo !== 'acerto') return;
+  cpu.acertos.push([r,c]);
+  var candidatos = [];
+  if (cpu.acertos.length >= 2){
+    var linhas = cpu.acertos.map(function(p){return p[0];});
+    var cols   = cpu.acertos.map(function(p){return p[1];});
+    if (linhas.every(function(x){return x===linhas[0];})){
+      candidatos = [[linhas[0], Math.min.apply(null,cols)-1],
+                    [linhas[0], Math.max.apply(null,cols)+1]];
+    } else if (cols.every(function(x){return x===cols[0];})){
+      candidatos = [[Math.min.apply(null,linhas)-1, cols[0]],
+                    [Math.max.apply(null,linhas)+1, cols[0]]];
+    }
+  }
+  if (!candidatos.length) candidatos = [[r-1,c],[r+1,c],[r,c-1],[r,c+1]];
+  candidatos.forEach(function(p){
+    if (p[0]>=0 && p[0]<N && p[1]>=0 && p[1]<N && !tab.tiros[p[0]][p[1]])
+      cpu.fila.unshift(p);
+  });
+}
+
+/* ---------- Início e fases (modos locais) ---------- */
+function iniciarBatalha(modo, nivel){
+  var jogo = {
+    modo: modo,
+    nomes: ['Jogador 1', modo==='pc' ? 'Computador' : 'Jogador 2'],
+    tabuleiros: [novoTabuleiro(), novoTabuleiro()],
+    vez: 0,
+    cpu: modo==='pc' ? novaCpu(nivel) : null
+  };
+  if (modo === 'pc') posicionarAleatorio(jogo.tabuleiros[1]);
+  mostrarTela(telaPosicionar(jogo, 0));
+}
+
+/* ---------- Fase de posicionamento (local e online) ---------- */
+function telaPosicionar(jogo, jogador){
+  var tab = jogo.tabuleiros[jogador];
+  var navioAtual = 0, horizontal = true;
+
+  var el = document.createElement('div');
+  el.innerHTML =
+    '<h2 class="display">⚓ ' + jogo.nomes[jogador] + ': posicione sua frota</h2>' +
+    '<p id="pos-status" class="status"></p>' +
+    '<div id="pos-grade"></div>' +
+    '<div class="linha-botoes">' +
+      '<button class="botao botao--fantasma" id="bt-girar">Girar navio (R)</button>' +
+      '<button class="botao botao--fantasma" id="bt-aleatorio">Posicionar ao acaso (A)</button>' +
+      '<button class="botao botao--fantasma" id="bt-desfazer">Desfazer (Backspace)</button>' +
+      '<button class="botao" id="bt-confirmar" disabled>Confirmar frota</button>' +
+      '<button class="botao botao--fantasma" id="bt-ajuda">❓ Ajuda</button>' +
+    '</div>';
+
+  var statusEl = el.querySelector('#pos-status');
+  var previa = {}; /* casas da prévia: chave "r,c" -> true; previa.cabe diz se é válida */
+
+  function textoNavioAtual(){
+    if (navioAtual >= tab.navios.length) return 'Todos os navios posicionados.';
+    var n = tab.navios[navioAtual];
+    return 'Navio ' + (navioAtual+1) + ' de ' + tab.navios.length + ': ' + n.nome +
+           ', ' + n.tam + ' casas, ' + (horizontal ? 'horizontal' : 'vertical') + '.';
+  }
+  function atualizarStatus(){ statusEl.textContent = textoNavioAtual(); }
+
+  function calcularPrevia(r, c){
+    previa = {};
+    if (navioAtual >= tab.navios.length) return;
+    var tam = tab.navios[navioAtual].tam;
+    previa.cabe = podeColocar(tab, navioAtual, r, c, horizontal);
+    for (var i=0; i<tam; i++){
+      var rr = r + (horizontal?0:i), cc = c + (horizontal?i:0);
+      if (rr<N && cc<N) previa[rr + ',' + cc] = true;
+    }
+  }
+
+  var grade = criarGrade({
+    linhas:N, colunas:N, rotulo:'Tabuleiro de posicionamento',
+    aoFocar: function(r,c){
+      calcularPrevia(r,c);
+      grade.atualizar();
+      if (navioAtual >= tab.navios.length){ falar(coordFala(r,c)); return; }
+      falar(coordFala(r,c) + (previa.cabe ? '' : '. Não cabe aqui.'));
+    },
+    aoAtivar: function(r,c){ tentarColocar(r,c); },
+    classeCelula: function(r,c){
+      if (previa[r + ',' + c]) return previa.cabe ? 'previa' : 'previa-ruim';
+      return segmentoNavio(tab, r, c);
+    },
+    conteudoCelula: function(){ return ''; },
+    rotuloCelula: function(r,c){
+      return coordNome(r,c) + (tab.grade[r][c] !== -1 ? ', navio' : ', livre');
+    }
+  });
+  el.querySelector('#pos-grade').appendChild(grade.el);
+
+  function tentarColocar(r,c){
+    if (navioAtual >= tab.navios.length){
+      falar('Todos os navios já foram posicionados. Pressione Enter no botão Confirmar frota.');
+      return;
+    }
+    if (!podeColocar(tab, navioAtual, r, c, horizontal)){
+      falar('O ' + tab.navios[navioAtual].nome + ' não cabe em ' + coordFala(r,c) +
+            ' na ' + (horizontal?'horizontal':'vertical') + '. Escolha outra casa ou gire com R.');
+      return;
+    }
+    var nome = tab.navios[navioAtual].nome;
+    colocarNavio(tab, navioAtual, r, c, horizontal);
+    navioAtual++;
+    calcularPrevia(grade.cursor.r, grade.cursor.c);
+    grade.atualizar();
+    atualizarStatus();
+    if (navioAtual < tab.navios.length){
+      falar(nome + ' posicionado em ' + coordFala(r,c) + '. Agora, ' + textoNavioAtual());
+    } else {
+      concluirPosicionamento(nome + ' posicionado em ' + coordFala(r,c) + '. ');
+    }
+  }
+
+  function concluirPosicionamento(prefixo){
+    previa = {};
+    grade.atualizar();
+    atualizarStatus();
+    var bt = el.querySelector('#bt-confirmar');
+    bt.disabled = false;
+    bt.focus();
+    falar((prefixo||'') + 'Todos os navios posicionados. ' +
+          'Pressione Enter para confirmar a frota, ou Backspace para desfazer.');
+  }
+
+  function girar(){
+    horizontal = !horizontal;
+    calcularPrevia(grade.cursor.r, grade.cursor.c);
+    grade.atualizar();
+    atualizarStatus();
+    falar(horizontal ? 'Horizontal.' : 'Vertical.');
+  }
+  function desfazer(){
+    if (navioAtual === 0){ falar('Nada para desfazer.'); return; }
+    navioAtual--;
+    removerNavio(tab, navioAtual);
+    el.querySelector('#bt-confirmar').disabled = true;
+    calcularPrevia(grade.cursor.r, grade.cursor.c);
+    grade.atualizar();
+    atualizarStatus();
+    falar(tab.navios[navioAtual].nome + ' removido. ' + textoNavioAtual());
+    grade.focar(grade.cursor.r, grade.cursor.c);
+  }
+  function aleatorio(){
+    posicionarAleatorio(tab, navioAtual);
+    navioAtual = tab.navios.length;
+    concluirPosicionamento('Navios restantes posicionados ao acaso. ');
+  }
+  function confirmar(){
+    if (navioAtual < tab.navios.length) return;
+    if (jogo.aoConfirmarOnline){ jogo.aoConfirmarOnline(); return; }
+    if (jogo.modo === 'pc'){
+      mostrarTela(telaBatalha(jogo));
+    } else if (jogador === 0){
+      mostrarTela(telaPassar('Frota do Jogador 1 pronta. Passe o aparelho para o Jogador 2 posicionar a frota dele.',
+        function(){ mostrarTela(telaPosicionar(jogo, 1)); }));
+    } else {
+      mostrarTela(telaPassar('Frotas prontas! Passe o aparelho para o Jogador 1 começar o ataque.',
+        function(){ jogo.vez = 0; mostrarTela(telaBatalha(jogo)); }));
+    }
+  }
+
+  el.querySelector('#bt-girar').addEventListener('click', girar);
+  el.querySelector('#bt-aleatorio').addEventListener('click', aleatorio);
+  el.querySelector('#bt-desfazer').addEventListener('click', desfazer);
+  el.querySelector('#bt-confirmar').addEventListener('click', confirmar);
+  el.querySelector('#bt-ajuda').addEventListener('click', abrirAjuda);
+
+  return {
+    el: el,
+    aoEntrar: function(){
+      atualizarStatus();
+      grade.atualizar();
+      grade.focar(0,0);
+      falar(jogo.nomes[jogador] + ', posicione sua frota. ' + textoNavioAtual() +
+            ' Use as setas para escolher a casa inicial, R para girar, Enter para posicionar, ' +
+            'ou A para posicionar tudo ao acaso.');
+    },
+    teclado: function(e){
+      if (e.key==='r' || e.key==='R'){ e.preventDefault(); girar(); return; }
+      if (e.key==='a' || e.key==='A'){ e.preventDefault(); aleatorio(); return; }
+      if (e.key==='Backspace'){ e.preventDefault(); desfazer(); return; }
+      if (document.activeElement && document.activeElement.classList.contains('celula'))
+        grade.teclado(e);
+    }
+  };
+}
+
+/* ---------- Tabuleiro próprio em miniatura ---------- */
+function renderMini(tab, titulo){
+  var caixa = document.createElement('div');
+  var h = document.createElement('h3');
+  h.textContent = titulo;
+  h.style.margin = '0 0 4px';
+  caixa.appendChild(h);
+  var g = document.createElement('div');
+  g.className = 'grade mini';
+  g.style.gridTemplateColumns = 'var(--cab) repeat(' + N + ', var(--cel))';
+  g.setAttribute('role','img');
+  g.setAttribute('aria-label', titulo + '. Pressione S para ouvir a situação da frota.');
+  g.appendChild(Object.assign(document.createElement('div'), {className:'cab'}));
+  for (var c0=0; c0<N; c0++)
+    g.appendChild(Object.assign(document.createElement('div'), {className:'cab', textContent:c0+1}));
+  for (var r=0; r<N; r++){
+    g.appendChild(Object.assign(document.createElement('div'), {className:'cab', textContent:LETRAS[r]}));
+    for (var c=0; c<N; c++){
+      var d = document.createElement('div');
+      var cls = 'celula';
+      if (tab.tiros[r][c]==='acerto'){
+        var idx = tab.grade[r][c];
+        cls += (idx !== -1 && tab.navios[idx].acertos === tab.navios[idx].tam) ? ' afundado' : ' acerto';
+      }
+      else if (tab.tiros[r][c]==='agua') cls += ' agua';
+      else if (tab.grade[r][c] !== -1) cls += ' ' + segmentoNavio(tab, r, c);
+      d.className = cls;
+      g.appendChild(d);
+    }
+  }
+  caixa.appendChild(g);
+  return caixa;
+}
+
+/* ---------- Fase de batalha (modos locais) ---------- */
+function telaBatalha(jogo){
+  var eu = jogo.vez, ele = 1 - eu;
+  var meu = jogo.tabuleiros[eu], dele = jogo.tabuleiros[ele];
+  var travado = false, fim = false;
+
+  var el = document.createElement('div');
+  el.innerHTML =
+    '<h2 class="display">💥 Vez de ' + jogo.nomes[eu] + '</h2>' +
+    '<p class="status" id="bat-status"></p>' +
+    '<div id="frota-visual"></div>' +
+    '<div class="tabuleiros">' +
+      '<div><h3 style="margin:0 0 4px">Ataque — frota de ' + jogo.nomes[ele] + '</h3><div id="bat-alvo"></div></div>' +
+      '<div id="bat-meu"></div>' +
+    '</div>' +
+    '<div class="linha-botoes">' +
+      '<button class="botao" id="bt-passar" hidden>Passar a vez</button>' +
+      '<button class="botao botao--fantasma" id="bt-situacao">Situação (S)</button>' +
+      '<button class="botao botao--fantasma" id="bt-ajuda2">❓ Ajuda</button>' +
+      '<button class="botao botao--fantasma" id="bt-menu">Sair para o menu</button>' +
+    '</div>';
+
+  function estadoCasa(r,c){
+    var t = dele.tiros[r][c];
+    if (!t) return { txt:'não atacada', fala:'' };
+    if (t === 'agua') return { txt:'água', fala:', água' };
+    var idx = dele.grade[r][c];
+    if (idx !== -1 && dele.navios[idx].acertos === dele.navios[idx].tam)
+      return { txt:'navio afundado', fala:', navio afundado' };
+    return { txt:'atingida', fala:', já atingida' };
+  }
+
+  var grade = criarGrade({
+    linhas:N, colunas:N, rotulo:'Tabuleiro de ataque',
+    aoFocar: function(r,c){ falar(coordFala(r,c) + estadoCasa(r,c).fala); },
+    aoAtivar: function(r,c){ atacar(r,c); },
+    classeCelula: function(r,c){
+      var t = dele.tiros[r][c];
+      if (!t) return '';
+      if (t === 'agua') return 'agua';
+      var idx = dele.grade[r][c];
+      if (idx !== -1 && dele.navios[idx].acertos === dele.navios[idx].tam) return 'afundado';
+      return 'acerto';
+    },
+    conteudoCelula: function(){ return ''; },
+    rotuloCelula: function(r,c){ return coordNome(r,c) + ', ' + estadoCasa(r,c).txt; }
+  });
+  el.querySelector('#bat-alvo').appendChild(grade.el);
+
+  var caixaMeu = el.querySelector('#bat-meu');
+  function redesenharMeu(){
+    caixaMeu.innerHTML = '';
+    caixaMeu.appendChild(renderMini(meu, 'Sua frota'));
+  }
+
+  var statusEl = el.querySelector('#bat-status');
+  function atualizarStatus(){
+    statusEl.textContent =
+      'Você afundou ' + naviosAfundados(dele) + ' de ' + dele.navios.length +
+      ' navios de ' + jogo.nomes[ele] + '. ' +
+      jogo.nomes[ele] + ' afundou ' + naviosAfundados(meu) + ' dos seus.';
+    var fv = el.querySelector('#frota-visual');
+    fv.innerHTML = '';
+    fv.appendChild(faixaFrota('Sua frota:', meu.navios));
+    fv.appendChild(faixaFrota('Frota de ' + jogo.nomes[ele] + ':', dele.navios));
+  }
+  function falarSituacao(){
+    var minha = meu.navios.map(function(n){
+      return n.nome + ' ' + (n.acertos===n.tam ? 'afundado' : (n.acertos>0 ? 'atingido' : 'intacto'));
+    }).join(', ');
+    falar('Você afundou ' + naviosAfundados(dele) + ' de ' + dele.navios.length +
+          ' navios inimigos. Sua frota: ' + minha + '.');
+  }
+
+  function textoResultado(r, c, res){
+    var base = coordFala(r,c) + ': ';
+    if (res.tipo === 'agua')   return base + 'água.';
+    if (res.tipo === 'acerto') return base + 'acertou!';
+    return base + 'acertou e afundou o ' + res.navio + '!';
+  }
+
+  function atacar(r,c){
+    if (fim || travado){ return; }
+    var res = atirar(dele, r, c);
+    if (!res){ falar('Você já atirou em ' + coordFala(r,c) + '. Escolha outra casa.'); return; }
+    grade.atualizar();
+    if (res.tipo === 'afundou') animarNaufragio(grade, res.celulas);
+    else grade.animar(r,c);
+    somDoResultado(res.tipo);
+    atualizarStatus();
+    if (frotaDestruida(dele)){ return vitoria(eu, textoResultado(r,c,res)); }
+    if (jogo.modo === 'pc'){
+      travado = true;
+      falar(textoResultado(r,c,res));
+      window.setTimeout(vezDoComputador, 1600);
+    } else {
+      travado = true;
+      var bt = el.querySelector('#bt-passar');
+      bt.hidden = false; bt.focus();
+      falar(textoResultado(r,c,res) + ' Pressione Enter para passar a vez.', {juntar:false});
+    }
+  }
+
+  function vezDoComputador(){
+    var alvo = cpuEscolherTiro(jogo.cpu, meu);
+    var res = atirar(meu, alvo[0], alvo[1]);
+    cpuRegistrar(jogo.cpu, meu, alvo[0], alvo[1], res);
+    redesenharMeu();
+    somDoResultado(res.tipo);
+    atualizarStatus();
+    var msg = 'Computador atira em ' + coordFala(alvo[0], alvo[1]) + ': ';
+    if (res.tipo === 'agua') msg += 'água.';
+    else if (res.tipo === 'acerto') msg += 'acertou o seu ' + res.navio + '!';
+    else msg += 'afundou o seu ' + res.navio + '!';
+    if (frotaDestruida(meu)){ return vitoria(1, msg); }
+    falar(msg + ' Sua vez.', {juntar:true});
+    travado = false;
+    grade.focar(grade.cursor.r, grade.cursor.c);
+  }
+
+  function vitoria(vencedor, msgTiro){
+    fim = true;
+    tocarSom(vencedor === eu ? 'vitoria' : 'afundou');
+    falar(msgTiro + ' Fim de jogo! ' + jogo.nomes[vencedor] + ' venceu a Batalha Naval, afundando toda a frota inimiga!');
+    var caixa = document.createElement('div');
+    caixa.className = 'linha-botoes';
+    caixa.innerHTML =
+      '<button class="botao" id="bt-denovo">Jogar de novo</button>' +
+      '<button class="botao botao--fantasma" id="bt-menu2">Menu principal</button>';
+    el.appendChild(caixa);
+    caixa.querySelector('#bt-denovo').addEventListener('click', function(){ iniciarBatalha(jogo.modo); });
+    caixa.querySelector('#bt-menu2').addEventListener('click', function(){ mostrarTela(telaMenu()); });
+    caixa.querySelector('#bt-denovo').focus();
+  }
+
+  el.querySelector('#bt-passar').addEventListener('click', function(){
+    mostrarTela(telaPassar('Passe o aparelho para ' + jogo.nomes[ele] + '.', function(){
+      jogo.vez = ele;
+      mostrarTela(telaBatalha(jogo));
+    }));
+  });
+  el.querySelector('#bt-situacao').addEventListener('click', falarSituacao);
+  el.querySelector('#bt-ajuda2').addEventListener('click', abrirAjuda);
+  el.querySelector('#bt-menu').addEventListener('click', function(){ mostrarTela(telaMenu()); });
+
+  return {
+    el: el,
+    aoEntrar: function(){
+      grade.atualizar();
+      redesenharMeu();
+      atualizarStatus();
+      grade.focar(0,0);
+      falar(jogo.nomes[eu] + ', sua vez de atacar. Use as setas para escolher a coordenada ' +
+            'e Enter para atirar. Pressione S para ouvir a situação das frotas.');
+    },
+    teclado: function(e){
+      if (e.key==='s' || e.key==='S'){ e.preventDefault(); falarSituacao(); return; }
+      if (document.activeElement && document.activeElement.classList.contains('celula'))
+        grade.teclado(e);
+    }
+  };
+}
+
+/* ---------- Batalha Naval ONLINE ---------- */
+function iniciarBatalhaOnline(){
+  var tab = novoTabuleiro();
+  var jogoPos = {
+    modo: 'online',
+    nomes: ['Você'],
+    tabuleiros: [tab],
+    aoConfirmarOnline: function(){
+      net.socket.emit('bn:frota', {
+        navios: tab.navios.map(function(n){
+          return { nome:n.nome, tam:n.tam, celulas:n.celulas };
+        })
+      });
+      mostrarTela(telaBatalhaOnline(tab));
+    }
+  };
+  mostrarTela(telaPosicionar(jogoPos, 0));
+}
+
+function telaBatalhaOnline(meu){
+  var nomeDele = nomeAdversario();
+  var fim = false, travado = false;
+  var minhaVez = null; /* null = aguardando a frota do adversário */
+  var afundadosDele = 0;
+  var acertosInimigo = {}; /* quantos acertos já dei em cada navio dele */
+  var ataques = []; /* o que já sei do tabuleiro dele: null|'agua'|'acerto'|'afundado' */
+  for (var r0=0; r0<N; r0++){ ataques[r0]=[]; for (var c0=0; c0<N; c0++) ataques[r0][c0]=null; }
+
+  var el = document.createElement('div');
+  el.innerHTML =
+    '<h2 class="display">🌐 Batalha Naval online — sala ' + net.codigo + '</h2>' +
+    '<p class="status" id="bat-status">Aguardando ' + nomeDele + ' posicionar a frota…</p>' +
+    '<div id="frota-visual"></div>' +
+    '<div class="tabuleiros">' +
+      '<div><h3 style="margin:0 0 4px">Ataque — frota do adversário</h3><div id="bat-alvo"></div></div>' +
+      '<div id="bat-meu"></div>' +
+    '</div>' +
+    '<div class="linha-botoes">' +
+      '<button class="botao botao--fantasma" id="bt-situacao">Situação (S)</button>' +
+      '<button class="botao botao--fantasma" id="bt-ajuda2">❓ Ajuda</button>' +
+      '<button class="botao botao--fantasma" id="bt-menu">Sair da partida</button>' +
+    '</div>';
+
+  function estadoCasa(r,c){
+    var t = ataques[r][c];
+    if (!t) return { txt:'não atacada', fala:'' };
+    if (t === 'agua') return { txt:'água', fala:', água' };
+    if (t === 'afundado') return { txt:'navio afundado', fala:', navio afundado' };
+    return { txt:'atingida', fala:', já atingida' };
+  }
+
+  var grade = criarGrade({
+    linhas:N, colunas:N, rotulo:'Tabuleiro de ataque',
+    aoFocar: function(r,c){ falar(coordFala(r,c) + estadoCasa(r,c).fala); },
+    aoAtivar: function(r,c){ atacarOnline(r,c); },
+    classeCelula: function(r,c){ return ataques[r][c] || ''; },
+    conteudoCelula: function(){ return ''; },
+    rotuloCelula: function(r,c){ return coordNome(r,c) + ', ' + estadoCasa(r,c).txt; }
+  });
+  el.querySelector('#bat-alvo').appendChild(grade.el);
+
+  var caixaMeu = el.querySelector('#bat-meu');
+  function redesenharMeu(){
+    caixaMeu.innerHTML = '';
+    caixaMeu.appendChild(renderMini(meu, 'Sua frota'));
+  }
+
+  var statusEl = el.querySelector('#bat-status');
+  function atualizarStatus(){
+    statusEl.textContent =
+      'Você afundou ' + afundadosDele + ' de ' + NAVIOS_DEF.length + ' navios de ' + nomeDele + '. ' +
+      nomeDele + ' afundou ' + naviosAfundados(meu) + ' dos seus.' +
+      (minhaVez === null ? '' : (minhaVez ? ' Sua vez.' : ' Vez de ' + nomeDele + '.'));
+    var fv = el.querySelector('#frota-visual');
+    fv.innerHTML = '';
+    fv.appendChild(faixaFrota('Sua frota:', meu.navios));
+    fv.appendChild(faixaFrota('Frota de ' + nomeDele + ':', NAVIOS_DEF.map(function(nd){
+      return { tam: nd.tam, acertos: acertosInimigo[nd.nome] || 0 };
+    })));
+  }
+  function falarSituacao(){
+    var minha = meu.navios.map(function(n){
+      return n.nome + ' ' + (n.acertos===n.tam ? 'afundado' : (n.acertos>0 ? 'atingido' : 'intacto'));
+    }).join(', ');
+    falar('Você afundou ' + afundadosDele + ' de ' + NAVIOS_DEF.length +
+          ' navios de ' + nomeDele + '. Sua frota: ' + minha + '.' +
+          (minhaVez === null ? '' : (minhaVez ? ' Sua vez.' : ' Vez de ' + nomeDele + '.')));
+  }
+
+  function atacarOnline(r,c){
+    if (fim) return;
+    if (minhaVez === null){ falar('Aguarde: ' + nomeDele + ' ainda está posicionando a frota.'); return; }
+    if (!minhaVez){ falar('Aguarde a sua vez.'); return; }
+    if (travado) return;
+    if (ataques[r][c]){ falar('Você já atirou em ' + coordFala(r,c) + '. Escolha outra casa.'); return; }
+    travado = true;
+    net.socket.emit('bn:tiro', { r:r, c:c });
+  }
+
+  function fimDeJogo(venci){
+    fim = true;
+    tocarSom(venci ? 'vitoria' : 'afundou');
+    falar('Fim de jogo! ' + (venci
+      ? 'Você venceu a Batalha Naval, afundando toda a frota do adversário!'
+      : nomeDele + ' venceu, afundando toda a sua frota. Boa sorte na próxima!'), {juntar:true});
+    var caixa = document.createElement('div');
+    caixa.className = 'linha-botoes';
+    caixa.innerHTML =
+      '<button class="botao" id="bt-revanche">🔁 Revanche</button>' +
+      '<button class="botao botao--fantasma" id="bt-menu-fim">Voltar ao menu</button>';
+    el.appendChild(caixa);
+    caixa.querySelector('#bt-revanche').addEventListener('click', function(){
+      this.disabled = true;
+      net.socket.emit('sala:revanche');
+      falar('Revanche pedida! Aguardando ' + nomeDele + ' aceitar.');
+    });
+    caixa.querySelector('#bt-menu-fim').addEventListener('click', sairDaPartida);
+    caixa.querySelector('#bt-revanche').focus();
+  }
+
+  function sairDaPartida(){
+    if (net.socket) net.socket.disconnect();
+    net.socket = null; net.codigo = null; net.token = null; net.reconectando = false;
+    mostrarTela(telaMenu());
+  }
+
+  el.querySelector('#bt-situacao').addEventListener('click', falarSituacao);
+  el.querySelector('#bt-ajuda2').addEventListener('click', abrirAjuda);
+  el.querySelector('#bt-menu').addEventListener('click', sairDaPartida);
+
+  return {
+    el: el,
+    aoEntrar: function(){
+      grade.atualizar();
+      redesenharMeu();
+      atualizarStatus();
+      grade.focar(0,0);
+      falar('Frota enviada! Aguardando ' + nomeDele + ' terminar de posicionar a frota.');
+    },
+    teclado: function(e){
+      if (e.key==='s' || e.key==='S'){ e.preventDefault(); falarSituacao(); return; }
+      if (document.activeElement && document.activeElement.classList.contains('celula'))
+        grade.teclado(e);
+    },
+    rede: {
+      'vez:aviso': function(){
+        falar('Atenção: faltam 15 segundos para a sua vez passar.');
+      },
+      'vez:passou': function(d){
+        if (d.jogo !== 'bn') return;
+        minhaVez = (d.vez === net.papel);
+        travado = false;
+        atualizarStatus();
+        falar(minhaVez ? 'O tempo de ' + nomeDele + ' acabou. Sua vez de atacar!'
+                       : 'O seu tempo acabou. Vez de ' + nomeDele + '.');
+      },
+      'bn:comecar': function(d){
+        minhaVez = (d.vez === net.papel);
+        atualizarStatus();
+        falar('As duas frotas estão prontas! ' +
+              (minhaVez ? 'Você começa atacando. Use as setas e Enter para atirar.'
+                        : nomeDele + ' começa atacando. Aguarde a sua vez.'));
+      },
+      'bn:resultado': function(d){
+        var texto;
+        if (d.atacante === net.papel){
+          /* meu tiro no tabuleiro dele */
+          if (d.tipo === 'afundou'){
+            afundadosDele++;
+            acertosInimigo[d.navio] = tamPorNome(d.navio);
+            (d.celulas || []).forEach(function(p){ ataques[p[0]][p[1]] = 'afundado'; });
+            texto = 'Você atirou em ' + coordFala(d.r, d.c) + ': acertou e afundou o ' + d.navio + '!';
+          } else if (d.tipo === 'acerto'){
+            ataques[d.r][d.c] = 'acerto';
+            acertosInimigo[d.navio] = (acertosInimigo[d.navio] || 0) + 1;
+            texto = 'Você atirou em ' + coordFala(d.r, d.c) + ': acertou!';
+          } else {
+            ataques[d.r][d.c] = 'agua';
+            texto = 'Você atirou em ' + coordFala(d.r, d.c) + ': água.';
+          }
+          grade.atualizar();
+          if (d.tipo === 'afundou') animarNaufragio(grade, d.celulas);
+          else grade.animar(d.r, d.c);
+        } else {
+          /* tiro do adversário no meu tabuleiro */
+          atirar(meu, d.r, d.c);
+          redesenharMeu();
+          if (d.tipo === 'afundou')      texto = nomeDele + ' atirou em ' + coordFala(d.r, d.c) + ' e afundou o seu ' + d.navio + '!';
+          else if (d.tipo === 'acerto')  texto = nomeDele + ' atirou em ' + coordFala(d.r, d.c) + ' e acertou o seu ' + d.navio + '!';
+          else                           texto = nomeDele + ' atirou em ' + coordFala(d.r, d.c) + ': água.';
+        }
+        somDoResultado(d.tipo);
+        atualizarStatus();
+        if (d.fim){
+          falar(texto, {juntar:false});
+          fimDeJogo(d.vencedor === net.papel);
+          return;
+        }
+        minhaVez = (d.vez === net.papel);
+        travado = false;
+        atualizarStatus();
+        falar(texto + (minhaVez ? ' Sua vez.' : ' Vez do adversário.'), {juntar:false});
+        if (minhaVez) grade.focar(grade.cursor.r, grade.cursor.c);
+      }
+    }
+  };
+}
+
+/* =====================================================
+   JOGO DA MEMÓRIA — 32 cartas (16 pares), de A1 a D8
+===================================================== */
+var MEM_L = 4, MEM_C = 8;
+var CARTAS_BASE = [
+  { nome:'Cachorro',   emoji:'🐶' },
+  { nome:'Gato',       emoji:'🐱' },
+  { nome:'Peixe',      emoji:'🐟' },
+  { nome:'Passarinho', emoji:'🐦' },
+  { nome:'Cavalo',     emoji:'🐴' },
+  { nome:'Vaca',       emoji:'🐮' },
+  { nome:'Sapo',       emoji:'🐸' },
+  { nome:'Coruja',     emoji:'🦉' },
+  { nome:'Leão',       emoji:'🦁' },
+  { nome:'Tigre',      emoji:'🐯' },
+  { nome:'Urso',       emoji:'🐻' },
+  { nome:'Panda',      emoji:'🐼' },
+  { nome:'Coelho',     emoji:'🐰' },
+  { nome:'Raposa',     emoji:'🦊' },
+  { nome:'Macaco',     emoji:'🐵' },
+  { nome:'Pinguim',    emoji:'🐧' }
+];
+
+function estatisticasMemoria(pares, lances, inicio){
+  var seg = Math.round((Date.now() - inicio) / 1000);
+  var min = Math.floor(seg / 60); seg = seg % 60;
+  var tempo = (min ? min + (min === 1 ? ' minuto e ' : ' minutos e ') : '') +
+              seg + ' segundos';
+  var taxa = lances ? Math.round(pares * 100 / lances) : 0;
+  return 'A partida teve ' + lances + ' lances em ' + tempo +
+         ', com ' + taxa + ' por cento de aproveitamento.';
+}
+function iniciarMemoria(modo, pares){
+  pares = pares === 8 ? 8 : 16;
+  MEM_L = 4; MEM_C = (pares === 8 ? 4 : 8);
+  /* posições das cartas são sempre sorteadas ao acaso */
+  var baralho = [];
+  CARTAS_BASE.slice(0, pares).forEach(function(cta){
+    baralho.push({ nome:cta.nome, emoji:cta.emoji, estado:'oculta' });
+    baralho.push({ nome:cta.nome, emoji:cta.emoji, estado:'oculta' });
+  });
+  for (var i = baralho.length - 1; i > 0; i--){
+    var j = Math.floor(Math.random() * (i + 1));
+    var tmp = baralho[i]; baralho[i] = baralho[j]; baralho[j] = tmp;
+  }
+  var jogo = {
+    modo: modo,
+    pares: pares,
+    nomes: ['Jogador 1', modo==='pc' ? 'Computador' : 'Jogador 2'],
+    cartas: baralho,
+    placar: [0,0],
+    vez: 0,
+    memCpu: modo==='pc' ? {} : null /* memória do PC: índice -> nome da carta */
+  };
+  mostrarTela(telaMemoria(jogo));
+}
+
+function telaMemoria(jogo){
+  var travado = false, fim = false;
+  var viradas = []; /* índices das cartas viradas neste lance */
+  var lances = 0, inicioPartida = Date.now();
+
+  var el = document.createElement('div');
+  el.innerHTML =
+    '<h2 class="display">🃏 Jogo da Memória</h2>' +
+    '<p class="status" id="mem-status"></p>' +
+    '<div id="mem-grade"></div>' +
+    '<div class="linha-botoes">' +
+      '<button class="botao botao--fantasma" id="bt-placar">Placar (S)</button>' +
+      '<button class="botao botao--fantasma" id="bt-ajuda3">❓ Ajuda</button>' +
+      '<button class="botao botao--fantasma" id="bt-menu3">Sair para o menu</button>' +
+    '</div>';
+
+  function idxDe(r,c){ return r * MEM_C + c; }
+
+  var grade = criarGrade({
+    linhas:MEM_L, colunas:MEM_C, classe:'grade--mem', rotulo:'Tabuleiro do jogo da memória',
+    aoFocar: function(r,c){
+      var cta = jogo.cartas[idxDe(r,c)];
+      if (cta.estado === 'oculta') falar(coordFala(r,c));
+      else if (cta.estado === 'virada') falar(coordFala(r,c) + ', ' + cta.nome);
+      else falar(coordFala(r,c) + ', ' + cta.nome + ', par já encontrado');
+    },
+    aoAtivar: function(r,c){ jogadaHumana(r,c); },
+    classeCelula: function(r,c){
+      var cta = jogo.cartas[idxDe(r,c)];
+      return 'carta' + (cta.estado === 'encontrada' ? ' par' : '');
+    },
+    conteudoCelula: function(r,c){
+      var cta = jogo.cartas[idxDe(r,c)];
+      return cta.estado === 'oculta' ? '❔' : cta.emoji;
+    },
+    rotuloCelula: function(r,c){
+      var cta = jogo.cartas[idxDe(r,c)];
+      if (cta.estado === 'oculta') return coordNome(r,c) + ', carta virada para baixo';
+      if (cta.estado === 'virada') return coordNome(r,c) + ', ' + cta.nome;
+      return coordNome(r,c) + ', ' + cta.nome + ', par encontrado';
+    }
+  });
+  el.querySelector('#mem-grade').appendChild(grade.el);
+
+  var statusEl = el.querySelector('#mem-status');
+  function atualizarStatus(){
+    statusEl.textContent = 'Vez de ' + jogo.nomes[jogo.vez] + ' — ' +
+      jogo.nomes[0] + ': ' + jogo.placar[0] + ' par(es) · ' +
+      jogo.nomes[1] + ': ' + jogo.placar[1] + ' par(es)';
+  }
+  function falarPlacar(){
+    falar('Placar: ' + jogo.nomes[0] + ', ' + jogo.placar[0] + ' pares. ' +
+          jogo.nomes[1] + ', ' + jogo.placar[1] + ' pares. Vez de ' + jogo.nomes[jogo.vez] + '.');
+  }
+
+  function memorizarCpu(idx){
+    if (jogo.memCpu) jogo.memCpu[idx] = jogo.cartas[idx].nome;
+  }
+  function cpuEsquecerUmPouco(){
+    /* o computador não é perfeito: esquece cada carta com 15% de chance */
+    Object.keys(jogo.memCpu).forEach(function(k){
+      if (Math.random() < 0.15) delete jogo.memCpu[k];
+    });
+  }
+
+  function virar(idx, anunciarPrefixo){
+    var cta = jogo.cartas[idx];
+    cta.estado = 'virada';
+    viradas.push(idx);
+    memorizarCpu(idx);
+    grade.atualizar();
+    var r = Math.floor(idx / MEM_C), c = idx % MEM_C;
+    falar((anunciarPrefixo||'') + coordFala(r,c) + ': ' + cta.nome + '.', {juntar:!!anunciarPrefixo});
+    tocarNota(cta.nome);
+  }
+
+  function jogadaHumana(r,c){
+    if (fim || travado) return;
+    if (jogo.modo === 'pc' && jogo.vez === 1) return;
+    var idx = idxDe(r,c);
+    var cta = jogo.cartas[idx];
+    if (cta.estado === 'encontrada'){ falar(coordFala(r,c) + ' já forma um par. Escolha outra carta.'); return; }
+    if (cta.estado === 'virada'){ falar(coordFala(r,c) + ' já está virada. Escolha outra carta.'); return; }
+    virar(idx);
+    if (viradas.length === 2){
+      travado = true;
+      window.setTimeout(resolver, 1300);
+    }
+  }
+
+  function resolver(){
+    lances++;
+    var a = jogo.cartas[viradas[0]], b = jogo.cartas[viradas[1]];
+    var quem = jogo.vez;
+    if (a.nome === b.nome){
+      a.estado = 'encontrada'; b.estado = 'encontrada';
+      jogo.placar[quem]++;
+      viradas = [];
+      grade.atualizar();
+      atualizarStatus();
+      tocarSom('par');
+      if (jogo.cartas.every(function(x){ return x.estado === 'encontrada'; })) return finalizar();
+      falar('É um par de ' + a.nome + '! ' + jogo.nomes[quem] + ' marca 1 ponto e joga de novo.', {juntar:true});
+      if (jogo.modo === 'pc' && quem === 1){
+        window.setTimeout(vezDoComputador, 1800);
+      } else {
+        travado = false;
+        grade.focar(grade.cursor.r, grade.cursor.c);
+      }
+    } else {
+      var proximo = 1 - quem;
+      falar(a.nome + ' e ' + b.nome + '. Não é par. Vez de ' + jogo.nomes[proximo] + '.', {juntar:true});
+      window.setTimeout(function(){
+        a.estado = 'oculta'; b.estado = 'oculta';
+        viradas = [];
+        jogo.vez = proximo;
+        grade.atualizar();
+        atualizarStatus();
+        if (jogo.modo === 'pc' && proximo === 1){
+          vezDoComputador();
+        } else {
+          travado = false;
+          grade.focar(grade.cursor.r, grade.cursor.c);
+          if (jogo.modo === '2p') falar(jogo.nomes[proximo] + ', escolha uma carta.', {juntar:true});
+        }
+      }, 1700);
+    }
+  }
+
+  function cartasOcultas(){
+    var lista = [];
+    jogo.cartas.forEach(function(cta, i){ if (cta.estado === 'oculta') lista.push(i); });
+    return lista;
+  }
+  function parConhecido(){
+    var porNome = {};
+    var achado = null;
+    cartasOcultas().forEach(function(i){
+      var nome = jogo.memCpu[i];
+      if (!nome) return;
+      if (porNome[nome] !== undefined && !achado) achado = [porNome[nome], i];
+      porNome[nome] = i;
+    });
+    return achado;
+  }
+
+  function vezDoComputador(){
+    travado = true;
+    cpuEsquecerUmPouco();
+    falar('Vez do computador.', {juntar:true});
+    var par = parConhecido();
+    window.setTimeout(function(){
+      var i1;
+      if (par){ i1 = par[0]; }
+      else {
+        var semMemoria = cartasOcultas().filter(function(i){ return !jogo.memCpu[i]; });
+        i1 = semMemoria.length ? sortear(semMemoria) : sortear(cartasOcultas());
+      }
+      virar(i1, 'Computador vira ');
+      window.setTimeout(function(){
+        var i2;
+        if (par){ i2 = par[1]; }
+        else {
+          var nome1 = jogo.cartas[i1].nome;
+          var conhecidaIgual = cartasOcultas().find(function(i){
+            return i !== i1 && jogo.memCpu[i] === nome1;
+          });
+          if (conhecidaIgual !== undefined) i2 = conhecidaIgual;
+          else {
+            var restantes = cartasOcultas().filter(function(i){ return i !== i1; });
+            i2 = sortear(restantes);
+          }
+        }
+        virar(i2, 'Computador vira ');
+        window.setTimeout(resolver, 1400);
+      }, 1500);
+    }, 1100);
+  }
+
+  function finalizar(){
+    fim = true;
+    tocarSom('vitoria');
+    var msg = 'Fim de jogo! Placar final: ' + jogo.nomes[0] + ', ' + jogo.placar[0] +
+              ' pares; ' + jogo.nomes[1] + ', ' + jogo.placar[1] + ' pares. ';
+    if (jogo.placar[0] > jogo.placar[1]) msg += jogo.nomes[0] + ' venceu!';
+    else if (jogo.placar[1] > jogo.placar[0]) msg += jogo.nomes[1] + ' venceu!';
+    else msg += 'Empate!';
+    msg += ' ' + estatisticasMemoria(jogo.pares, lances, inicioPartida);
+    falar(msg, {juntar:true});
+    var caixa = document.createElement('div');
+    caixa.className = 'linha-botoes';
+    caixa.innerHTML =
+      '<button class="botao" id="bt-denovo-m">Jogar de novo</button>' +
+      '<button class="botao botao--fantasma" id="bt-menu4">Menu principal</button>';
+    el.appendChild(caixa);
+    caixa.querySelector('#bt-denovo-m').addEventListener('click', function(){ iniciarMemoria(jogo.modo, jogo.pares); });
+    caixa.querySelector('#bt-menu4').addEventListener('click', function(){ mostrarTela(telaMenu()); });
+    caixa.querySelector('#bt-denovo-m').focus();
+  }
+
+  el.querySelector('#bt-placar').addEventListener('click', falarPlacar);
+  el.querySelector('#bt-ajuda3').addEventListener('click', abrirAjuda);
+  el.querySelector('#bt-menu3').addEventListener('click', function(){ mostrarTela(telaMenu()); });
+
+  return {
+    el: el,
+    aoEntrar: function(){
+      grade.atualizar();
+      atualizarStatus();
+      grade.focar(0,0);
+      falar('Jogo da Memória: ' + (jogo.pares * 2) + ' cartas embaralhadas ao acaso, ' +
+            jogo.pares + ' pares, de A 1 a ' + LETRAS[MEM_L-1] + ' ' + MEM_C + '. ' +
+            'Cada bicho tem a sua própria nota musical. ' +
+            'Use as setas para escolher a coordenada e Enter para virar a carta. ' +
+            'Quem encontra um par joga de novo. ' + jogo.nomes[0] + ' começa.');
+    },
+    teclado: function(e){
+      if (e.key==='s' || e.key==='S'){ e.preventDefault(); falarPlacar(); return; }
+      if (document.activeElement && document.activeElement.classList.contains('celula'))
+        grade.teclado(e);
+    }
+  };
+}
+
+/* ---------- Jogo da Memória ONLINE ---------- */
+function iniciarMemoriaOnline(){
+  MEM_L = 4; MEM_C = 8; /* online é sempre a partida completa de 16 pares */
+  mostrarTela(telaMemoriaOnline());
+}
+
+function telaMemoriaOnline(){
+  var nomeDele = nomeAdversario();
+  var fim = false, travado = true; /* travado até o mem:comecar */
+  var lances = 0, inicioPartida = Date.now();
+  var vez = null;
+  var placar = [0,0];
+  var viradasNoLance = 0;
+  var cartas = [];
+  for (var i=0; i<MEM_L*MEM_C; i++) cartas.push({ estado:'oculta', nome:'', emoji:'' });
+
+  var el = document.createElement('div');
+  el.innerHTML =
+    '<h2 class="display">🌐 Jogo da Memória online — sala ' + net.codigo + '</h2>' +
+    '<p class="status" id="mem-status">Conectando…</p>' +
+    '<div id="mem-grade"></div>' +
+    '<div class="linha-botoes">' +
+      '<button class="botao botao--fantasma" id="bt-placar">Placar (S)</button>' +
+      '<button class="botao botao--fantasma" id="bt-ajuda3">❓ Ajuda</button>' +
+      '<button class="botao botao--fantasma" id="bt-menu3">Sair da partida</button>' +
+    '</div>';
+
+  function idxDe(r,c){ return r * MEM_C + c; }
+
+  var grade = criarGrade({
+    linhas:MEM_L, colunas:MEM_C, classe:'grade--mem', rotulo:'Tabuleiro do jogo da memória',
+    aoFocar: function(r,c){
+      var cta = cartas[idxDe(r,c)];
+      if (cta.estado === 'oculta') falar(coordFala(r,c));
+      else if (cta.estado === 'virada') falar(coordFala(r,c) + ', ' + cta.nome);
+      else falar(coordFala(r,c) + ', ' + cta.nome + ', par já encontrado');
+    },
+    aoAtivar: function(r,c){ jogada(r,c); },
+    classeCelula: function(r,c){
+      var cta = cartas[idxDe(r,c)];
+      return 'carta' + (cta.estado === 'encontrada' ? ' par' : '');
+    },
+    conteudoCelula: function(r,c){
+      var cta = cartas[idxDe(r,c)];
+      return cta.estado === 'oculta' ? '❔' : cta.emoji;
+    },
+    rotuloCelula: function(r,c){
+      var cta = cartas[idxDe(r,c)];
+      if (cta.estado === 'oculta') return coordNome(r,c) + ', carta virada para baixo';
+      if (cta.estado === 'virada') return coordNome(r,c) + ', ' + cta.nome;
+      return coordNome(r,c) + ', ' + cta.nome + ', par encontrado';
+    }
+  });
+  el.querySelector('#mem-grade').appendChild(grade.el);
+
+  var statusEl = el.querySelector('#mem-status');
+  function atualizarStatus(){
+    if (vez === null){ statusEl.textContent = 'Conectando…'; return; }
+    statusEl.textContent = 'Vez de ' + (vez === net.papel ? 'você' : nomeDele) + ' — ' +
+      'Você: ' + placar[net.papel] + ' par(es) · ' + nomeDele + ': ' + placar[1-net.papel] + ' par(es)';
+  }
+  function falarPlacar(){
+    if (vez === null){ falar('Aguardando o início da partida.'); return; }
+    falar('Placar: você, ' + placar[net.papel] + ' pares. ' + nomeDele + ', ' + placar[1-net.papel] +
+          ' pares. Vez de ' + (vez === net.papel ? 'você' : nomeDele) + '.');
+  }
+
+  function jogada(r,c){
+    if (fim || travado) return;
+    if (vez !== net.papel){ falar('Aguarde a sua vez.'); return; }
+    var idx = idxDe(r,c);
+    var cta = cartas[idx];
+    if (cta.estado === 'encontrada'){ falar(coordFala(r,c) + ' já forma um par. Escolha outra carta.'); return; }
+    if (cta.estado === 'virada'){ falar(coordFala(r,c) + ' já está virada. Escolha outra carta.'); return; }
+    if (viradasNoLance >= 2) return;
+    net.socket.emit('mem:virar', { idx: idx });
+  }
+
+  function sairDaPartida(){
+    if (net.socket) net.socket.disconnect();
+    net.socket = null; net.codigo = null; net.token = null; net.reconectando = false;
+    mostrarTela(telaMenu());
+  }
+
+  function finalizar(vencedor){
+    fim = true;
+    var venci = (vencedor === net.papel);
+    tocarSom(vencedor === 'empate' ? 'par' : (venci ? 'vitoria' : 'afundou'));
+    var msg = 'Fim de jogo! Placar final: você, ' + placar[net.papel] +
+              ' pares; ' + nomeDele + ', ' + placar[1-net.papel] + ' pares. ';
+    if (vencedor === 'empate') msg += 'Empate!';
+    else msg += venci ? 'Você venceu!' : nomeDele + ' venceu!';
+    msg += ' ' + estatisticasMemoria(16, lances, inicioPartida);
+    falar(msg, {juntar:true});
+    var caixa = document.createElement('div');
+    caixa.className = 'linha-botoes';
+    caixa.innerHTML =
+      '<button class="botao" id="bt-revanche-m">🔁 Revanche</button>' +
+      '<button class="botao botao--fantasma" id="bt-menu-fim-m">Voltar ao menu</button>';
+    el.appendChild(caixa);
+    caixa.querySelector('#bt-revanche-m').addEventListener('click', function(){
+      this.disabled = true;
+      net.socket.emit('sala:revanche');
+      falar('Revanche pedida! Aguardando ' + nomeDele + ' aceitar.');
+    });
+    caixa.querySelector('#bt-menu-fim-m').addEventListener('click', sairDaPartida);
+    caixa.querySelector('#bt-revanche-m').focus();
+  }
+
+  el.querySelector('#bt-placar').addEventListener('click', falarPlacar);
+  el.querySelector('#bt-ajuda3').addEventListener('click', abrirAjuda);
+  el.querySelector('#bt-menu3').addEventListener('click', sairDaPartida);
+
+  return {
+    el: el,
+    aoEntrar: function(){
+      grade.atualizar();
+      atualizarStatus();
+      grade.focar(0,0);
+    },
+    teclado: function(e){
+      if (e.key==='s' || e.key==='S'){ e.preventDefault(); falarPlacar(); return; }
+      if (document.activeElement && document.activeElement.classList.contains('celula'))
+        grade.teclado(e);
+    },
+    rede: {
+      'vez:aviso': function(){
+        falar('Atenção: faltam 15 segundos para a sua vez passar.');
+      },
+      'vez:passou': function(d){
+        if (d.jogo !== 'mem') return;
+        (d.desvirar || []).forEach(function(i){
+          cartas[i] = { estado:'oculta', nome:'', emoji:'' };
+        });
+        viradasNoLance = 0;
+        travado = false;
+        vez = d.vez;
+        grade.atualizar();
+        atualizarStatus();
+        falar(vez === net.papel ? 'O tempo de ' + nomeDele + ' acabou. Sua vez: escolha uma carta.'
+                                : 'O seu tempo acabou. Vez de ' + nomeDele + '.');
+      },
+      'mem:comecar': function(d){
+        vez = d.vez;
+        travado = false;
+        atualizarStatus();
+        falar('Jogo da Memória online: 32 cartas embaralhadas, 16 pares, de A 1 a D 8. ' +
+              'Cada bicho tem a sua própria nota musical. ' +
+              'Cada jogador joga no próprio aparelho. Quem encontra um par joga de novo. ' +
+              (vez === net.papel ? 'Você começa: use as setas e Enter para virar uma carta.'
+                                 : nomeDele + ' começa. Aguarde a sua vez.'));
+      },
+      'mem:carta': function(d){
+        cartas[d.idx] = { estado:'virada', nome:d.nome, emoji:d.emoji };
+        tocarNota(d.nome);
+        viradasNoLance++;
+        grade.atualizar();
+        var r = Math.floor(d.idx / MEM_C), c = d.idx % MEM_C;
+        var prefixo = d.quem === net.papel ? '' : 'Adversário vira ';
+        falar(prefixo + coordFala(r,c) + ': ' + d.nome + '.', {juntar: d.quem !== net.papel});
+      },
+      'mem:resultado': function(d){
+        lances++;
+        placar = d.placar.slice();
+        viradasNoLance = 0;
+        var a = cartas[d.indices[0]], b = cartas[d.indices[1]];
+        if (d.par){
+          a.estado = 'encontrada'; b.estado = 'encontrada';
+          grade.atualizar();
+          atualizarStatus();
+          tocarSom('par');
+          if (d.fim){
+            window.setTimeout(function(){ finalizar(d.vencedor); }, 400);
+            return;
+          }
+          vez = d.vez;
+          falar('É um par de ' + a.nome + '! ' + nomeOnline(d.quem) +
+                (d.quem === net.papel ? ' marca 1 ponto e joga de novo.' : ' marca 1 ponto e joga de novo. Aguarde.'),
+                {juntar:true});
+        } else {
+          travado = true;
+          falar(a.nome + ' e ' + b.nome + '. Não é par. Vez de ' +
+                (d.vez === net.papel ? 'você' : nomeDele) + '.', {juntar:true});
+          window.setTimeout(function(){
+            a.estado = 'oculta'; a.nome=''; a.emoji='';
+            b.estado = 'oculta'; b.nome=''; b.emoji='';
+            vez = d.vez;
+            travado = false;
+            grade.atualizar();
+            atualizarStatus();
+            if (vez === net.papel){
+              grade.focar(grade.cursor.r, grade.cursor.c);
+              falar('Sua vez: escolha uma carta.', {juntar:true});
+            }
+          }, 1600);
+        }
+        atualizarStatus();
+      }
+    }
+  };
+}
+
+/* =====================================================
+   INÍCIO
+===================================================== */
+mostrarTela(telaMenu());
+})();
+</script>
+<script>
+if ('serviceWorker' in navigator &&
+    (location.protocol === 'https:' || location.hostname === 'localhost')){
+  window.addEventListener('load', function(){
+    navigator.serviceWorker.register('sw.js').catch(function(){ /* sem PWA, sem problema */ });
+  });
+}
+</script>
+</body>
+</html>

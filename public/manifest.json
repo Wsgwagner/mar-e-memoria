@@ -1,0 +1,14 @@
+{
+  "name": "Mar & Memória — jogos acessíveis por coordenadas",
+  "short_name": "Mar & Memória",
+  "description": "Batalha Naval e Jogo da Memória acessíveis para pessoas cegas e videntes, com modo online.",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#0C1B2A",
+  "theme_color": "#0C1B2A",
+  "lang": "pt-BR",
+  "icons": [
+    { "src": "icone-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icone-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
