@@ -4,6 +4,8 @@ Batalha Naval e Jogo da Memória acessíveis por coordenadas faladas, para que p
 cegas e videntes joguem juntas — no mesmo aparelho, contra o computador ou **online,
 cada um no seu aparelho**.
 
+![Tela inicial do Mar & Memória: escolha entre Batalha Naval e Jogo da Memória e painel de acessibilidade](docs/tela-inicial.jpg)
+
 ## Estrutura do projeto
 
 ```
